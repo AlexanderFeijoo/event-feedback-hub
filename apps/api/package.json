@@ -3,8 +3,15 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "ts-node --esm src/index.ts",
+    "start": "node --env-file=.env dist/index.js",
+    "build": "tsc",
+    "generate": "prisma generate",
+    "migrate": "prisma migrate dev --name init",
+    "prisma": "prisma",
+    "seed": "ts-node --esm prisma/seed.ts"
   },
   "keywords": [],
   "author": "",
@@ -27,5 +34,8 @@
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
+  },
+  "prisma": {
+    "schema": "./prisma/schema.prisma"
   }
 }
