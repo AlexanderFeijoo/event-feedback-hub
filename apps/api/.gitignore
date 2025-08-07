@@ -5,4 +5,4 @@ node_modules
 /src/generated/prisma
 
 #local DB
-apps/api/prisma/dev.db
+prisma/dev.db
