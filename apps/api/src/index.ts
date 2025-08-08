@@ -1,10 +1,19 @@
+import http from "http";
+import express from "express";
+import cors from "cors";
+import bodyParser from "body-parser";
 import { ApolloServer } from "@apollo/server";
-import { startStandaloneServer } from "@apollo/server/standalone";
+import { makeExecutableSchema } from "@graphql-tools/schema";
+import { expressMiddleware } from "@as-integrations/express5";
+import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
 import { createContext } from "./context.ts";
+import { withFilter } from "graphql-subscriptions";
+import { pubsub, FEEDBACK_ADDED } from "./pubsub.ts";
 
-// A schema is a collection of type definitions (hence "typeDefs")
-// that together define the "shape" of queries that are executed against
-// your data.
+import { useServer } from "graphql-ws/use/ws";
+import { WebSocketServer } from "ws";
+import { startFeedbackStream, stopFeedbackStream } from "./stream.ts";
+
 const typeDefs = `#graphql
   # Comments in GraphQL strings (such as this one) start with the hash (#) symbol.
 
@@ -45,6 +54,14 @@ const typeDefs = `#graphql
     updateEvent(id: ID!, name: String!): Event,
     updateFeedback(id: ID!, eventId: String!, userId: String!, text: String!, rating: Int!): Feedback,
     createUser(email: String!, name: String!): User
+    createEvent(name: String!): Event
+    createFeedback( eventId: ID!, userID: ID!, text: String!, rating: Int!): Feedback,
+    startFeedbackStream(interval: Int!): Boolean!,
+    stopFeedbackStream: Boolean!
+  }
+
+  type Subscription {
+    feedbackAdded(eventId: ID): Feedback!
   }
 `;
 
@@ -86,6 +103,37 @@ export const resolvers = {
         return createdUser;
       } catch (error) {
         throw new Error("Failed to create User.");
+      }
+    },
+    createEvent: async (_parent: any, args: any, context: any) => {
+      const { name } = args;
+      try {
+        const createdEvent = context.prisma.event.create({
+          data: { name },
+        });
+        return createdEvent;
+      } catch (error) {
+        throw new Error("Failed to create Event.");
+      }
+    },
+    createFeedback: async (_parent: any, args: any, context: any) => {
+      const { eventId, userId, text, rating } = args;
+      try {
+        const createdFeedback = context.prisma.user.create({
+          data: {
+            eventId,
+            userId,
+            text,
+            rating,
+            createdAt: new Date().toISOString(),
+          },
+        });
+        await pubsub.publish(FEEDBACK_ADDED, {
+          feedbackAdded: createdFeedback,
+        });
+        return createdFeedback;
+      } catch (error) {
+        throw new Error("Failed to create Feedback.");
       }
     },
     updateUser: async (_parent: any, args: any, context: any) => {
@@ -130,23 +178,67 @@ export const resolvers = {
         throw new Error("Failed to update Feedback.");
       }
     },
+    startFeedbackStream: async (_parent: any, args: any, context: any) => {
+      const { interval } = args;
+      startFeedbackStream(context.prisma, interval);
+      return true;
+    },
+    stopFeedbackStream: async (_parent: any, _args: any, _context: any) => {
+      await stopFeedbackStream();
+      return true;
+    },
+  },
+  Subscription: {
+    feedbackAdded: {
+      subscribe: withFilter(
+        () => pubsub.asyncIterableIterator(FEEDBACK_ADDED),
+        (payload, variables) => {
+          if (!variables.eventId) return true;
+          return payload.feedbackAdded.eventId === variables.eventId;
+        }
+      ),
+    },
   },
 };
 
+const schema = makeExecutableSchema({ typeDefs, resolvers });
+const app = express();
+const httpServer = http.createServer(app);
+const ws = new WebSocketServer({ server: httpServer, path: "/graphql" });
+const serverCleaner = useServer(
+  {
+    schema,
+    context: async () => createContext(),
+  },
+  ws
+);
 // The ApolloServer constructor requires two parameters: your schema
 // definition and your set of resolvers.
 const server = new ApolloServer({
-  typeDefs,
-  resolvers,
+  schema,
+  plugins: [
+    ApolloServerPluginDrainHttpServer({ httpServer }),
+    {
+      async serverWillStart() {
+        return {
+          async drainServer() {
+            await serverCleaner.dispose();
+          },
+        };
+      },
+    },
+  ],
 });
 
-// Passing an ApolloServer instance to the `startStandaloneServer` function:
-//  1. creates an Express app
-//  2. installs your ApolloServer instance as middleware
-//  3. prepares your app to handle incoming requests
-const { url } = await startStandaloneServer(server, {
-  listen: { port: 4000 },
-  context: async () => createContext(),
-});
+await server.start();
+app.use(
+  "/graphql",
+  cors(),
+  bodyParser.json(),
+  expressMiddleware(server, { context: async () => createContext() })
+);
 
-console.log(`🚀  Server ready at: ${url}`);
+httpServer.listen(4000, () => {
+  console.log(`Server at http://localhost:4000/graphql`);
+  console.log(`Feedback Subscriptions at ws://localhost:4000/graphql`);
+});
