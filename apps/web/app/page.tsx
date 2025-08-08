@@ -1,8 +1,8 @@
 "use client";
 import { useSubscription, gql, useQuery } from "@apollo/client";
 import { useEffect, useState } from "react";
-import { Feedback } from "./lib/__generated__/graphql";
-import { FeedbackEdge } from "./lib/__generated__/graphql";
+import { Feedback } from "../lib/__generated__/graphql";
+import { FeedbackEdge } from "../lib/__generated__/graphql";
 
 const FEEDBACK_ADDED = gql`
   subscription Subscription($eventId: ID) {

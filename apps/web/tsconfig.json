@@ -5,9 +5,25 @@
       {
         "name": "next"
       }
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    },
+    "jsx": "preserve",
+    "lib": [
+      "dom",
+      "esnext"
+    ],
+    "types": [
+      "node"
     ]
   },
   "include": [
+    "components",
+    "lib",
     "**/*.ts",
     "**/*.tsx",
     "next-env.d.ts",
@@ -15,6 +31,7 @@
     ".next/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "dist"
   ]
 }
