@@ -13,8 +13,24 @@ import { pubsub, FEEDBACK_ADDED } from "./pubsub.ts";
 import { useServer } from "graphql-ws/use/ws";
 import { WebSocketServer } from "ws";
 import { startFeedbackStream, stopFeedbackStream } from "./stream.ts";
+import type { Feedback } from "@prisma/client";
 
 const typeDefs = `#graphql
+  type FeedbackEdge {
+    node: Feedback!
+    cursor: String!
+  }
+
+  type FeedbackConnection {
+    edges: [FeedbackEdge!]!
+    pageInfo: PageInfo!
+  }
+
+  type PageInfo {
+    hasNextPage: Boolean!
+    endCursor: String
+  }
+
   type User {
     id: ID!
     email: String!
@@ -40,7 +56,7 @@ const typeDefs = `#graphql
   type Query {
     users: [User]
     events: [Event]
-    feedbacks: [Feedback]
+    feedbacks(first: Int!, after: String): FeedbackConnection!
   }
 
   type Mutation {
@@ -62,13 +78,33 @@ const typeDefs = `#graphql
 export const resolvers = {
   Query: {
     users: async (_parent: any, _args: any, context: any) =>
-      context.prisma.user.findMany(),
-    events: (_parent: any, _arg: any, context: any) =>
-      context.prisma.event.findMany(),
-    feedbacks: (_parent: any, _args: any, context: any) =>
-      context.prisma.feedback.findMany({
+      await context.prisma.user.findMany(),
+    events: async (_parent: any, _arg: any, context: any) =>
+      await context.prisma.event.findMany(),
+    feedbacks: async (_parent: any, { first, after }: any, context: any) => {
+      const feedbacks = await context.prisma.feedback.findMany({
+        take: first,
+        skip: after ? 1 : 0,
+        cursor: after ? { id: after } : undefined,
+        orderBy: { createdAt: "desc" },
         include: { user: true, event: true },
-      }),
+      });
+
+      const edges = feedbacks.map((feedback: Feedback) => ({
+        node: feedback,
+        cursor: feedback.id,
+      }));
+
+      return {
+        edges,
+        pageInfo: {
+          hasNextPage: feedbacks.length === first,
+          endCursor: feedbacks.length
+            ? feedbacks[feedbacks.length - 1].id
+            : null,
+        },
+      };
+    },
   },
   User: {
     feedbacks: (parent: any, _args: any, context: any) => {
