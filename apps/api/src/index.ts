@@ -15,9 +15,6 @@ import { WebSocketServer } from "ws";
 import { startFeedbackStream, stopFeedbackStream } from "./stream.ts";
 
 const typeDefs = `#graphql
-  # Comments in GraphQL strings (such as this one) start with the hash (#) symbol.
-
-  # This "User" type defines the the user associated with one or more feedbacks
   type User {
     id: ID!
     email: String!
@@ -40,9 +37,6 @@ const typeDefs = `#graphql
     createdAt: String!
   }
 
-  # The "Query" type is special: it lists all of the available queries that
-  # clients can execute, along with the return type for each. In this
-  # case, the "books" query returns an array of zero or more Books (defined above).
   type Query {
     users: [User]
     events: [Event]
@@ -65,7 +59,6 @@ const typeDefs = `#graphql
   }
 `;
 
-// TODO resolve explicit anys
 export const resolvers = {
   Query: {
     users: async (_parent: any, _args: any, context: any) =>
@@ -212,8 +205,7 @@ const serverCleaner = useServer(
   },
   ws
 );
-// The ApolloServer constructor requires two parameters: your schema
-// definition and your set of resolvers.
+
 const server = new ApolloServer({
   schema,
   plugins: [

@@ -19,7 +19,6 @@ export async function createOrReuseUsersAndEvents(
     const user = await prisma.user.findFirst({ skip: userStep });
     const event = await prisma.event.findFirst({ skip: eventStep });
 
-    // Narrow nulls — should never be null if count > 0
     if (!user || !event) {
       throw new Error("Expected existing user/event but found null");
     }
