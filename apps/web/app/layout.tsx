@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import "./globals.css";
+import "./style/globals.css";
 import { ApolloWrapper } from "./lib/ApolloWrapper";
 
 const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
+  src: "./style/fonts/GeistVF.woff",
   variable: "--font-geist-sans",
 });
 const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
+  src: "./style/fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
 });
 
