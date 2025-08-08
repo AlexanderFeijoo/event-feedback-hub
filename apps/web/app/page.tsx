@@ -3,7 +3,8 @@ import { useSubscription, gql, useQuery } from "@apollo/client";
 import { useEffect, useState } from "react";
 import { Feedback } from "../lib/__generated__/graphql";
 import { FeedbackEdge } from "../lib/__generated__/graphql";
-
+import { ModeToggle } from "@/components/ui/mode-toggle";
+import { Button } from "@/components/ui/button";
 const FEEDBACK_ADDED = gql`
   subscription Subscription($eventId: ID) {
     feedbackAdded(eventId: $eventId) {
@@ -129,7 +130,8 @@ export default function DisplayFeedback() {
           </p>
         </div>
       ))}
-      <button onClick={loadMore}>Load More</button>
+      <Button onClick={loadMore}>Load More</Button>
+      <ModeToggle />
     </div>
   );
 }
