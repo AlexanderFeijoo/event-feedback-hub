@@ -3,8 +3,9 @@ import { useSubscription, gql, useQuery } from "@apollo/client";
 import { useEffect, useState } from "react";
 import { Feedback } from "../lib/__generated__/graphql";
 import { FeedbackEdge } from "../lib/__generated__/graphql";
-
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { FeedbackCard } from "./feedback-card";
 const FEEDBACK_ADDED = gql`
   subscription Subscription($eventId: ID) {
     feedbackAdded(eventId: $eventId) {
@@ -111,26 +112,11 @@ export default function DisplayFeedback() {
     return <p>Subscription Error: {subscriptionError.message}</p>;
 
   return (
-    <div>
+    <ScrollArea className="h-full w-full rounded-md border p-4">
       {feedbacks.map((feedback) => (
-        <div key={feedback.id}>
-          <h3>{feedback.event.name}</h3>
-          <p>
-            <strong>Feedback:</strong> {feedback.text}
-          </p>
-          <p>
-            <strong>Rating:</strong> {feedback.rating}
-          </p>
-          <p>
-            <strong>User:</strong> {feedback.user?.name} ({feedback.user?.email}
-            )
-          </p>
-          <p>
-            <em>{feedback.createdAt}</em>
-          </p>
-        </div>
+        <FeedbackCard key={feedback.id} feedback={feedback} />
       ))}
       <Button onClick={loadMore}>Load More</Button>
-    </div>
+    </ScrollArea>
   );
 }
