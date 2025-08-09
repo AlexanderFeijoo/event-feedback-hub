@@ -236,14 +236,82 @@ export function FeedbackTable() {
     }
   }, [feedbackQueryData]);
 
-  useEffect(() => {
-    if (feedbackSubscriptionData?.feedbackAdded) {
-      setFeedbacks((prev) => {
-        const updated = [feedbackSubscriptionData.feedbackAdded, ...prev];
-        return updated;
-      });
+  // useEffect(() => {
+  //   if (feedbackSubscriptionData?.feedbackAdded) {
+  //     setFeedbacks((prev) => {
+  //       const updated = [feedbackSubscriptionData.feedbackAdded, ...prev];
+  //       return updated;
+  //     });
+  //   }
+  // }, [feedbackSubscriptionData]);
+  const FEEDBACK_NODE = gql`
+    fragment FeedbackNode on Feedback {
+      id
+      rating
+      text
+      createdAt
+      user {
+        name
+        email
+      }
+      event {
+        name
+      }
     }
-  }, [feedbackSubscriptionData]);
+  `;
+
+  useSubscription(FEEDBACK_ADDED, {
+    onData: ({ client, data }) => {
+      const node = data?.data?.feedbackAdded;
+      if (!node) return;
+
+      const nodeRef = client.cache.writeFragment({
+        data: node,
+        fragment: FEEDBACK_NODE,
+      });
+
+      client.cache.modify({
+        fields: {
+          feedbacks(
+            existing = {
+              __typename: "FeedbackConnection",
+              count: 0,
+              edges: [],
+              pageInfo: {
+                __typename: "PageInfo",
+                hasNextPage: false,
+                endCursor: null,
+              },
+            }
+          ) {
+            const edges = existing.edges ?? [];
+            const already = edges.some((e) => {
+              const n = e?.node;
+              return (
+                n && client.cache.identify(n) === client.cache.identify(nodeRef)
+              );
+            });
+            if (already) {
+              return existing;
+            }
+
+            const newEdge = {
+              __typename: "FeedbackEdge",
+              cursor: node.id,
+              node: nodeRef,
+            };
+
+            return {
+              ...existing,
+              count: (existing.count ?? 0) + 1,
+              edges: [newEdge, ...edges],
+              pageInfo: existing.pageInfo,
+            };
+          },
+        },
+      });
+    },
+  });
 
   console.log("feedbacks", feedbacks);
 
@@ -284,7 +352,7 @@ export function FeedbackTable() {
     index: number,
     size: number
   ): Promise<boolean> => {
-    const nextRows = (index + 1) * size;
+    const nextRows = Math.min((index + 1) * size, totalRows);
     let currentRows = fetchedRows;
     let moreRows = hasNextPage;
 
@@ -297,22 +365,27 @@ export function FeedbackTable() {
       const resp = await fetchMore({
         variables: { first: nextRows - currentRows, after: cursor },
         updateQuery: (prev, { fetchMoreResult }) => {
-          if (!fetchMoreResult) return prev;
+          const prevEdges = prev?.feedbacks?.edges ?? [];
+          const nextEdges = fetchMoreResult?.feedbacks?.edges ?? [];
+          const pageInfo =
+            fetchMoreResult?.feedbacks?.pageInfo ??
+            prev?.feedbacks?.pageInfo ??
+            null;
+          const count =
+            fetchMoreResult?.feedbacks?.count ?? prev?.feedbacks?.count ?? 0;
+
           return {
             feedbacks: {
-              ...fetchMoreResult.feedbacks,
-              edges: [
-                ...prev.feedbacks.edges,
-                ...fetchMoreResult.feedbacks.edges,
-              ],
-              pageInfo: fetchMoreResult.feedbacks.pageInfo,
-              count: fetchMoreResult.feedbacks.count ?? prev.feedbacks.count,
+              ...(prev?.feedbacks ?? {}),
+              edges: [...prevEdges, ...nextEdges],
+              pageInfo,
+              count,
             },
           };
         },
       });
-      const fetched = resp.data?.feedbacks?.edges?.length ?? 0;
-      currentRows += fetched;
+      const delta = resp.data?.feedbacks?.edges?.length ?? 0;
+      currentRows += delta;
       moreRows = resp?.data?.feedbacks?.pageInfo?.hasNextPage ?? false;
       cursor = resp?.data?.feedbacks?.pageInfo?.endCursor ?? null;
     }
@@ -324,10 +397,10 @@ export function FeedbackTable() {
   }, [pageIndex, pageSize, hasNextPage, fetchedRows]);
 
   const handleNext = async () => {
-    const nextIndex = pageIndex + 1;
+    const nextIndex = Math.min(pageIndex + 1, totalPages - 1);
+    if (nextIndex === pageIndex) return;
     const hasMoreRows = await getRowsForNext(nextIndex, pageSize);
     if (!hasMoreRows) return;
-
     table.setPageIndex(nextIndex);
   };
 
@@ -339,16 +412,21 @@ export function FeedbackTable() {
     fetchMore({
       variables: { first: pagination.pageSize, after: endCursor },
       updateQuery: (prev, { fetchMoreResult }) => {
-        if (!fetchMoreResult) return prev;
+        const prevEdges = prev?.feedbacks?.edges ?? [];
+        const nextEdges = fetchMoreResult?.feedbacks?.edges ?? [];
+        const pageInfo =
+          fetchMoreResult?.feedbacks?.pageInfo ??
+          prev?.feedbacks?.pageInfo ??
+          null;
+        const count =
+          fetchMoreResult?.feedbacks?.count ?? prev?.feedbacks?.count ?? 0;
+
         return {
           feedbacks: {
-            ...fetchMoreResult.feedbacks,
-            edges: [
-              ...prev.feedbacks.edges,
-              ...fetchMoreResult.feedbacks.edges,
-            ],
-            pageInfo: fetchMoreResult.feedbacks.pageInfo,
-            count: fetchMoreResult.feedbacks.count ?? prev.feedbacks.count,
+            ...(prev?.feedbacks ?? {}),
+            edges: [...prevEdges, ...nextEdges],
+            pageInfo,
+            count,
           },
         };
       },
@@ -497,7 +575,7 @@ export function FeedbackTable() {
             variant="outline"
             size="sm"
             onClick={handleNext}
-            disabled={!table.getCanNextPage() && !hasNextPage}
+            disabled={pageIndex >= totalPages - 1}
           >
             Next
           </Button>
