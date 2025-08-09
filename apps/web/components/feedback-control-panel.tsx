@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/card";
 import { gql, useMutation } from "@apollo/client";
 import { useCallback, useState } from "react";
+import Modal from "./modal";
+import CreateFeedbackForm from "./create-feedback-form";
 
 const START_STREAM = gql`
   mutation StartFeedbackStream($interval: Int!) {
@@ -73,6 +75,13 @@ export default function SimulatedFeedbackControlPanel() {
               ? "Stop Stream"
               : "Start Stream"}
         </Button>
+        <Modal
+          title="Add New Feedback"
+          description="Your feedback will be published to the live feedback stream"
+          triggerText="Add Feedback"
+        >
+          <CreateFeedbackForm />
+        </Modal>
       </CardFooter>
     </Card>
   );

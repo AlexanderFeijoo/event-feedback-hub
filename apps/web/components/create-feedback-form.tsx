@@ -17,50 +17,65 @@ import { gql, useMutation } from "@apollo/client";
 import { useState } from "react";
 import { useModalControls } from "./modal";
 
-const CREATE_EVENT = gql`
-  mutation CreateEvent($name: String!, $description: String!) {
-    createEvent(name: $name, description: $description) {
-      name
-      description
+const CREATE_FEEDBACK = gql`
+  mutation CreateFeedback(
+    $eventId: ID!
+    $userId: ID!
+    $text: String!
+    $rating: Int!
+  ) {
+    createFeedback(
+      eventId: $eventId
+      userId: $userId
+      text: $text
+      rating: $rating
+    ) {
+      text
+      rating
       id
     }
   }
 `;
 
 const formSchema = z.object({
-  eventName: z.string().nonempty({
-    message: "Event Name is required",
+  text: z.string().nonempty({
+    message: "Feedback is a required field.",
   }),
-  description: z.string().nonempty({
-    message: "Event Description is required.",
-  }),
+  rating: z
+    .number({
+      message: "Feedback rating is required",
+    })
+    .nullable(),
 });
 
-export default function CreateEventForm() {
-  const [createEvent, createEventState] = useMutation(CREATE_EVENT);
-  const [messageColorClass, setMessageColorClass] = useState(
-    "text-muted-foreground"
-  );
+export default function CreateFeedbackForm() {
+  const [createFeedback, createFeedbackState] = useMutation(CREATE_FEEDBACK);
   const { close } = useModalControls();
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      const event = await createEvent({
-        variables: { name: values.eventName, description: values.description },
-      });
       console.log(values);
+      const feedback = await createFeedback({
+        variables: {
+          text: values.text,
+          rating: values.rating,
+          eventId: "event0",
+          userId: "abc123",
+        },
+      });
+
       close();
-      console.log(event);
+      console.log(feedback);
     } catch (error) {
-      console.error("error creating event", error);
+      console.error("error creating feedback", error);
     }
   }
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      eventName: "",
-      description: "",
+      text: "",
+      rating: 5,
     },
   });
   return (
@@ -68,24 +83,10 @@ export default function CreateEventForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <FormField
           control={form.control}
-          name="eventName"
+          name="text"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Event Name</FormLabel>
-              <FormControl>
-                <Input placeholder="shadcn" {...field} />
-              </FormControl>
-              <FormDescription>The display name for the Event.</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
+              <FormLabel>Your Feedback</FormLabel>
               <FormControl>
                 <Textarea
                   className="resize-none"
@@ -93,7 +94,9 @@ export default function CreateEventForm() {
                   {...field}
                 />
               </FormControl>
-              <FormDescription>The display name for the Event.</FormDescription>
+              <FormDescription>
+                Describe your thoughts and feelings about this event.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

@@ -27,13 +27,13 @@ export function useModalControls() {
 }
 
 type modalProps = {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   title: string;
   description: string;
   triggerText: string;
 };
 
-export default function CreateModal({
+export default function Modal({
   children,
   title,
   description,

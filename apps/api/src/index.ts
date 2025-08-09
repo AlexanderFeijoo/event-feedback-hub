@@ -66,7 +66,7 @@ const typeDefs = `#graphql
     updateFeedback(id: ID!, eventId: String!, userId: String!, text: String!, rating: Int!): Feedback,
     createUser(email: String!, name: String!): User
     createEvent(name: String!, description: String!): Event
-    createFeedback( eventId: ID!, userID: ID!, text: String!, rating: Int!): Feedback,
+    createFeedback( eventId: ID!, userId: ID!, text: String!, rating: Int!): Feedback,
     startFeedbackStream(interval: Int!): Boolean!,
     stopFeedbackStream: Boolean!
   }
@@ -151,12 +151,13 @@ export const resolvers = {
       try {
         const createdFeedback = context.prisma.feedback.create({
           data: {
-            eventId,
-            userId,
             text,
             rating,
-            createdAt: new Date().toISOString(),
+            createdAt: new Date(),
+            event: { connect: { id: eventId } },
+            user: { connect: { id: userId } },
           },
+          include: { user: true, event: true },
         });
         await pubsub.publish(FEEDBACK_ADDED, {
           feedbackAdded: createdFeedback,

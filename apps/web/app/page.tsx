@@ -1,6 +1,6 @@
 "use client";
 import DisplayFeedback from "@/components/display-feedbacks";
-import SimulatedFeedbackControlPanel from "@/components/simulated-feedback-control-panel";
+import SimulatedFeedbackControlPanel from "@/components/feedback-control-panel";
 import EventHubControlPanel from "@/components/event-hub-control-panel";
 
 export default function MainLayout() {

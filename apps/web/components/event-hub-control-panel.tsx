@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { gql, useMutation } from "@apollo/client";
 import { useCallback, useState } from "react";
-import CreateModal from "@/components/create-modal";
+import CreateModal from "@/components/modal";
 import CreateEventForm from "./create-event-form";
 
 const STOP_STREAM = gql`

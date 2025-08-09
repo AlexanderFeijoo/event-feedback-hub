@@ -59,6 +59,7 @@ export type Mutation = {
 
 
 export type MutationCreateEventArgs = {
+  description: Scalars['String']['input'];
   name: Scalars['String']['input'];
 };
 
@@ -67,7 +68,7 @@ export type MutationCreateFeedbackArgs = {
   eventId: Scalars['ID']['input'];
   rating: Scalars['Int']['input'];
   text: Scalars['String']['input'];
-  userID: Scalars['ID']['input'];
+  userId: Scalars['ID']['input'];
 };
 
 
