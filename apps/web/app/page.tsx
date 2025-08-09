@@ -2,6 +2,7 @@
 import DisplayFeedback from "@/components/display-feedbacks";
 import SimulatedFeedbackControlPanel from "@/components/feedback-control-panel";
 import EventHubControlPanel from "@/components/event-hub-control-panel";
+import { FeedbackTable } from "@/components/feedback-table";
 
 export default function MainLayout() {
   return (
@@ -15,7 +16,8 @@ export default function MainLayout() {
         </div>
       </div>
       <div className="bg-muted/50 rounded-xl flex-1 flex min-h-0 overflow-hidden">
-        <DisplayFeedback />
+        {/* <DisplayFeedback /> */}
+        <FeedbackTable />
       </div>
     </div>
   );
