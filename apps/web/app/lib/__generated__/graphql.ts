@@ -122,6 +122,7 @@ export type Query = {
 
 export type QueryFeedbacksArgs = {
   after?: InputMaybe<Scalars['String']['input']>;
+  eventId?: InputMaybe<Scalars['ID']['input']>;
   first: Scalars['Int']['input'];
 };
 

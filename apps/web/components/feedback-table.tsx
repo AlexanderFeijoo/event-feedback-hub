@@ -36,40 +36,33 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { gql, useQuery, useSubscription } from "@apollo/client";
-import { Feedback, FeedbackEdge } from "@/app/lib/__generated__/graphql";
+import { Event, Feedback, FeedbackEdge } from "@/app/lib/__generated__/graphql";
 import { useState, useEffect } from "react";
 import { ScrollArea } from "./ui/scroll-area";
 
-const FEEDBACK_ADDED = gql`
-  subscription Subscription($eventId: ID) {
-    feedbackAdded(eventId: $eventId) {
-      createdAt
-      rating
-      text
-      user {
-        name
-        email
-      }
-      event {
-        name
-      }
+const EVENTS = gql`
+  query Events {
+    events {
       id
+      name
+      description
     }
   }
 `;
 
 const FEEDBACKS = gql`
-  query Feedbacks($first: Int!, $after: String) {
-    feedbacks(first: $first, after: $after) {
+  query Feedbacks($first: Int!, $after: String, $eventId: ID) {
+    feedbacks(first: $first, after: $after, eventId: $eventId) {
       count
       edges {
         cursor
         node {
+          id
           rating
           text
           createdAt
-          id
           event {
+            id
             name
             description
           }
@@ -82,6 +75,26 @@ const FEEDBACKS = gql`
       pageInfo {
         hasNextPage
         endCursor
+      }
+    }
+  }
+`;
+
+const FEEDBACK_ADDED = gql`
+  subscription Subscription($eventId: ID) {
+    feedbackAdded(eventId: $eventId) {
+      id
+      createdAt
+      rating
+      text
+      user {
+        name
+        email
+      }
+      event {
+        id
+        name
+        description
       }
     }
   }
@@ -173,35 +186,6 @@ export const columns: ColumnDef<Feedback>[] = [
       );
     },
   },
-  // {
-  //   id: "actions",
-  //   enableHiding: false,
-  //   cell: ({ row }) => {
-  //     const payment = row.original;
-
-  //     return (
-  //       <DropdownMenu>
-  //         <DropdownMenuTrigger asChild>
-  //           <Button variant="ghost" className="h-8 w-8 p-0">
-  //             <span className="sr-only">Open menu</span>
-  //             <MoreHorizontal />
-  //           </Button>
-  //         </DropdownMenuTrigger>
-  //         <DropdownMenuContent align="end">
-  //           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-  //           <DropdownMenuItem
-  //             onClick={() => navigator.clipboard.writeText(payment.id)}
-  //           >
-  //             Copy payment ID
-  //           </DropdownMenuItem>
-  //           <DropdownMenuSeparator />
-  //           <DropdownMenuItem>View customer</DropdownMenuItem>
-  //           <DropdownMenuItem>View payment details</DropdownMenuItem>
-  //         </DropdownMenuContent>
-  //       </DropdownMenu>
-  //     );
-  //   },
-  // },
 ];
 
 export function FeedbackTable() {
@@ -210,6 +194,8 @@ export function FeedbackTable() {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 5,
@@ -220,13 +206,18 @@ export function FeedbackTable() {
     loading: queryLoading,
     error: queryError,
     fetchMore,
+    refetch,
   } = useQuery(FEEDBACKS, {
-    variables: { first: pagination.pageSize, after: null },
+    variables: {
+      first: pagination.pageSize,
+      after: null,
+      eventId: selectedEventId ?? null,
+    },
     fetchPolicy: "cache-and-network",
+    notifyOnNetworkStatusChange: true,
   });
 
-  const { data: feedbackSubscriptionData, error: subscriptionError } =
-    useSubscription(FEEDBACK_ADDED);
+  const { data: eventData } = useQuery(EVENTS);
 
   useEffect(() => {
     if (feedbackQueryData?.feedbacks?.edges) {
@@ -236,80 +227,59 @@ export function FeedbackTable() {
     }
   }, [feedbackQueryData]);
 
-  // useEffect(() => {
-  //   if (feedbackSubscriptionData?.feedbackAdded) {
-  //     setFeedbacks((prev) => {
-  //       const updated = [feedbackSubscriptionData.feedbackAdded, ...prev];
-  //       return updated;
-  //     });
-  //   }
-  // }, [feedbackSubscriptionData]);
-  const FEEDBACK_NODE = gql`
-    fragment FeedbackNode on Feedback {
-      id
-      rating
-      text
-      createdAt
-      user {
-        name
-        email
-      }
-      event {
-        name
-      }
-    }
-  `;
+  useEffect(() => {
+    if (eventData?.events) setEvents(eventData.events);
+  }, [eventData]);
+
+  useEffect(() => {
+    setPagination((p) => ({ pageIndex: 0, pageSize: p.pageSize }));
+    refetch({
+      first: pagination.pageSize,
+      after: null,
+      eventId: selectedEventId ?? null,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedEventId]);
 
   useSubscription(FEEDBACK_ADDED, {
+    variables: { eventId: selectedEventId ?? null },
     onData: ({ client, data }) => {
       const node = data?.data?.feedbackAdded;
       if (!node) return;
 
-      const nodeRef = client.cache.writeFragment({
-        data: node,
-        fragment: FEEDBACK_NODE,
-      });
-
-      client.cache.modify({
-        fields: {
-          feedbacks(
-            existing = {
-              __typename: "FeedbackConnection",
-              count: 0,
-              edges: [],
-              pageInfo: {
-                __typename: "PageInfo",
-                hasNextPage: false,
-                endCursor: null,
-              },
-            }
-          ) {
-            const edges = existing.edges ?? [];
-            const already = edges.some((e) => {
-              const n = e?.node;
-              return (
-                n && client.cache.identify(n) === client.cache.identify(nodeRef)
-              );
-            });
-            if (already) {
-              return existing;
-            }
-
-            const newEdge = {
-              __typename: "FeedbackEdge",
-              cursor: node.id,
-              node: nodeRef,
-            };
-
-            return {
-              ...existing,
-              count: (existing.count ?? 0) + 1,
-              edges: [newEdge, ...edges],
-              pageInfo: existing.pageInfo,
-            };
+      client.cache.updateQuery(
+        {
+          query: FEEDBACKS,
+          variables: {
+            first: pagination.pageSize,
+            after: null,
+            eventId: selectedEventId ?? null,
           },
         },
-      });
+        (prev) => {
+          const prevEdges = prev?.feedbacks?.edges ?? [];
+          if (prevEdges.some((e: any) => e?.node?.id === node.id)) return prev;
+
+          const newEdge = {
+            __typename: "FeedbackEdge",
+            cursor: node.id,
+            node,
+          };
+
+          return {
+            feedbacks: {
+              ...(prev?.feedbacks ?? {}),
+              count: (prev?.feedbacks?.count ?? 0) + 1,
+              edges: [newEdge, ...prevEdges],
+              pageInfo: prev?.feedbacks?.pageInfo ?? {
+                __typename: "PageInfo",
+                hasNextPage: true,
+                endCursor: prev?.feedbacks?.pageInfo?.endCursor ?? null,
+              },
+            },
+          };
+        }
+      );
     },
   });
 
@@ -363,7 +333,11 @@ export function FeedbackTable() {
 
     while (currentRows < nextRows && moreRows && cursor) {
       const resp = await fetchMore({
-        variables: { first: nextRows - currentRows, after: cursor },
+        variables: {
+          first: nextRows - currentRows,
+          after: cursor,
+          eventId: selectedEventId ?? null,
+        },
         updateQuery: (prev, { fetchMoreResult }) => {
           const prevEdges = prev?.feedbacks?.edges ?? [];
           const nextEdges = fetchMoreResult?.feedbacks?.edges ?? [];
@@ -373,7 +347,6 @@ export function FeedbackTable() {
             null;
           const count =
             fetchMoreResult?.feedbacks?.count ?? prev?.feedbacks?.count ?? 0;
-
           return {
             feedbacks: {
               ...(prev?.feedbacks ?? {}),
@@ -393,8 +366,15 @@ export function FeedbackTable() {
   };
 
   useEffect(() => {
+    if (!feedbackQueryData) return;
     getRowsForNext(pageIndex, pageSize);
-  }, [pageIndex, pageSize, hasNextPage, fetchedRows]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    pageIndex,
+    pageSize,
+    feedbackQueryData?.feedbacks?.edges?.length,
+    feedbackQueryData?.feedbacks?.pageInfo?.hasNextPage,
+  ]);
 
   const handleNext = async () => {
     const nextIndex = Math.min(pageIndex + 1, totalPages - 1);
@@ -402,35 +382,6 @@ export function FeedbackTable() {
     const hasMoreRows = await getRowsForNext(nextIndex, pageSize);
     if (!hasMoreRows) return;
     table.setPageIndex(nextIndex);
-  };
-
-  const loadMore = () => {
-    const endCursor = feedbackQueryData?.feedbacks?.pageInfo?.endCursor;
-
-    if (!endCursor) return;
-
-    fetchMore({
-      variables: { first: pagination.pageSize, after: endCursor },
-      updateQuery: (prev, { fetchMoreResult }) => {
-        const prevEdges = prev?.feedbacks?.edges ?? [];
-        const nextEdges = fetchMoreResult?.feedbacks?.edges ?? [];
-        const pageInfo =
-          fetchMoreResult?.feedbacks?.pageInfo ??
-          prev?.feedbacks?.pageInfo ??
-          null;
-        const count =
-          fetchMoreResult?.feedbacks?.count ?? prev?.feedbacks?.count ?? 0;
-
-        return {
-          feedbacks: {
-            ...(prev?.feedbacks ?? {}),
-            edges: [...prevEdges, ...nextEdges],
-            pageInfo,
-            count,
-          },
-        };
-      },
-    });
   };
 
   const handleChangePageSize = (event) => {
@@ -449,8 +400,6 @@ export function FeedbackTable() {
   // Early returns if errors or loading
   if (queryLoading && feedbacks.length === 0) return <p>Loading...</p>;
   if (queryError) return <p>Error: {queryError.message}</p>;
-  if (subscriptionError)
-    return <p>Subscription Error: {subscriptionError.message}</p>;
 
   return (
     <div className="w-full">
@@ -463,7 +412,26 @@ export function FeedbackTable() {
           }
           className="max-w-sm"
         />
-        <Button onClick={loadMore}>Load More</Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">
+              Events <ChevronDown />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {events &&
+              events.map((event) => {
+                return (
+                  <DropdownMenuCheckboxItem
+                    key={event.id}
+                    className="capitalize"
+                  >
+                    {event.id}
+                  </DropdownMenuCheckboxItem>
+                );
+              })}
+          </DropdownMenuContent>
+        </DropdownMenu>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">

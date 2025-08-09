@@ -58,7 +58,7 @@ const typeDefs = `#graphql
   type Query {
     users: [User]
     events: [Event]
-    feedbacks(first: Int!, after: String): FeedbackConnection!
+    feedbacks(first: Int!, after: String, eventId: ID): FeedbackConnection!
   }
 
   type Mutation {
@@ -83,19 +83,25 @@ export const resolvers = {
       await context.prisma.user.findMany(),
     events: async (_parent: any, _arg: any, context: any) =>
       await context.prisma.event.findMany(),
-    feedbacks: async (_parent: any, { first, after }: any, context: any) => {
+    feedbacks: async (
+      _parent: any,
+      { first, after, eventId }: any,
+      context: any
+    ) => {
+      const where = eventId ? { eventId } : undefined;
       const [data, count] = await Promise.all([
         context.prisma.feedback.findMany({
+          where,
           take: first,
           skip: after ? 1 : 0,
           cursor: after ? { id: after } : undefined,
-          orderBy: { createdAt: "desc" },
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
           include: { user: true, event: true },
         }),
-        context.prisma.feedback.count(),
+        context.prisma.feedback.count({ where }),
       ]);
 
-      context.prisma.feedback.count();
+      // context.prisma.feedback.count();
 
       const edges = data?.map((feedback: Feedback) => ({
         node: feedback,
@@ -228,10 +234,9 @@ export const resolvers = {
     feedbackAdded: {
       subscribe: withFilter(
         () => pubsub.asyncIterableIterator(FEEDBACK_ADDED),
-        (payload, variables) => {
-          if (!variables.eventId) return true;
-          return payload.feedbackAdded.eventId === variables.eventId;
-        }
+        (payload, variables) =>
+          !variables.eventId ||
+          payload.feedbackAdded.event.id === variables.eventId
       ),
     },
   },
