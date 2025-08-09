@@ -8,6 +8,7 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  PaginationState,
   SortingState,
   useReactTable,
   VisibilityState,
@@ -60,6 +61,7 @@ const FEEDBACK_ADDED = gql`
 const FEEDBACKS = gql`
   query Feedbacks($first: Int!, $after: String) {
     feedbacks(first: $first, after: $after) {
+      count
       edges {
         cursor
         node {
@@ -208,13 +210,18 @@ export function FeedbackTable() {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 5,
+  });
+
   const {
     data: feedbackQueryData,
     loading: queryLoading,
     error: queryError,
     fetchMore,
   } = useQuery(FEEDBACKS, {
-    variables: { first: 5, after: null },
+    variables: { first: pagination.pageSize, after: null },
     fetchPolicy: "cache-and-network",
   });
 
@@ -245,22 +252,84 @@ export function FeedbackTable() {
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    autoResetPageIndex: false,
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       rowSelection,
-    },
-    initialState: {
-      pagination: { pageSize: 5 },
+      pagination,
     },
   });
+
+  // derived state vars
+  const hasNextPage =
+    feedbackQueryData?.feedbacks?.pageInfo?.hasNextPage ?? false;
+  const pageIndex = table.getState().pagination.pageIndex;
+  const pageSize = table.getState().pagination.pageSize;
+  const totalRows =
+    feedbackQueryData?.feedbacks?.count ??
+    table.getFilteredRowModel().rows.length;
+  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+  const fetchedRows = feedbackQueryData?.feedbacks?.edges?.length ?? 0;
+
+  const getRowsForNext = async (
+    index: number,
+    size: number
+  ): Promise<boolean> => {
+    const nextRows = (index + 1) * size;
+    let currentRows = fetchedRows;
+    let moreRows = hasNextPage;
+
+    if (currentRows >= nextRows || !moreRows) return currentRows >= nextRows;
+
+    let cursor = feedbackQueryData?.feedbacks?.pageInfo?.endCursor;
+    if (!cursor) return currentRows >= nextRows;
+
+    while (currentRows < nextRows && moreRows && cursor) {
+      const resp = await fetchMore({
+        variables: { first: nextRows - currentRows, after: cursor },
+        updateQuery: (prev, { fetchMoreResult }) => {
+          if (!fetchMoreResult) return prev;
+          return {
+            feedbacks: {
+              ...fetchMoreResult.feedbacks,
+              edges: [
+                ...prev.feedbacks.edges,
+                ...fetchMoreResult.feedbacks.edges,
+              ],
+              pageInfo: fetchMoreResult.feedbacks.pageInfo,
+              count: fetchMoreResult.feedbacks.count ?? prev.feedbacks.count,
+            },
+          };
+        },
+      });
+      const fetched = resp.data?.feedbacks?.edges?.length ?? 0;
+      currentRows += fetched;
+      moreRows = resp?.data?.feedbacks?.pageInfo?.hasNextPage ?? false;
+      cursor = resp?.data?.feedbacks?.pageInfo?.endCursor ?? null;
+    }
+    return currentRows >= nextRows;
+  };
+
+  useEffect(() => {
+    getRowsForNext(pageIndex, pageSize);
+  }, [pageIndex, pageSize, hasNextPage, fetchedRows]);
+
+  const handleNext = async () => {
+    const nextIndex = pageIndex + 1;
+    const hasMoreRows = await getRowsForNext(nextIndex, pageSize);
+    if (!hasMoreRows) return;
+
+    table.setPageIndex(nextIndex);
+  };
 
   const loadMore = () => {
     const endCursor = feedbackQueryData?.feedbacks?.pageInfo?.endCursor;
@@ -268,7 +337,7 @@ export function FeedbackTable() {
     if (!endCursor) return;
 
     fetchMore({
-      variables: { first: 5, after: endCursor },
+      variables: { first: pagination.pageSize, after: endCursor },
       updateQuery: (prev, { fetchMoreResult }) => {
         if (!fetchMoreResult) return prev;
         return {
@@ -279,9 +348,23 @@ export function FeedbackTable() {
               ...fetchMoreResult.feedbacks.edges,
             ],
             pageInfo: fetchMoreResult.feedbacks.pageInfo,
+            count: fetchMoreResult.feedbacks.count ?? prev.feedbacks.count,
           },
         };
       },
+    });
+  };
+
+  const handleChangePageSize = (event) => {
+    const nextPageSize = Number(event.target.value);
+
+    const visibleRowIndex = pageIndex * pageSize;
+    const newPageIndex = Math.floor(visibleRowIndex / nextPageSize);
+
+    setPagination({ pageIndex: newPageIndex, pageSize: nextPageSize });
+
+    getRowsForNext(newPageIndex, nextPageSize).then((hasMoreRows) => {
+      if (hasMoreRows) table.setPageIndex(newPageIndex);
     });
   };
 
@@ -331,7 +414,7 @@ export function FeedbackTable() {
         </DropdownMenu>
       </div>
       <div className="overflow-hidden rounded-md border">
-        <ScrollArea className="h-[500] rounded-md border">
+        <ScrollArea className="h-[500px] rounded-md border">
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -384,17 +467,16 @@ export function FeedbackTable() {
       </div>
       <div className="flex items-center justify-end space-x-2 py-4">
         <div className="text-muted-foreground flex-1 text-sm">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
+          {table.getFilteredSelectedRowModel().rows.length} of {totalRows}{" "}
+          row(s) selected.
         </div>
         <div className="text-sm text-muted-foreground">
-          Page <strong>{table.getState().pagination.pageIndex + 1}</strong> of{" "}
-          <strong>{table.getPageCount()}</strong>
+          Page <strong>{pageIndex + 1}</strong> of <strong>{totalPages}</strong>
         </div>
         <select
           className="ml-2 h-9 rounded-md border px-2 text-sm"
           value={table.getState().pagination.pageSize}
-          onChange={(e) => table.setPageSize(Number(e.target.value))}
+          onChange={handleChangePageSize}
         >
           {[5, 10, 20, 50].map((ps) => (
             <option key={ps} value={ps}>
@@ -414,8 +496,8 @@ export function FeedbackTable() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
+            onClick={handleNext}
+            disabled={!table.getCanNextPage() && !hasNextPage}
           >
             Next
           </Button>

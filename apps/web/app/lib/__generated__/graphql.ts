@@ -35,6 +35,7 @@ export type Feedback = {
 
 export type FeedbackConnection = {
   __typename?: 'FeedbackConnection';
+  count: Scalars['Int']['output'];
   edges: Array<FeedbackEdge>;
   pageInfo: PageInfo;
 };

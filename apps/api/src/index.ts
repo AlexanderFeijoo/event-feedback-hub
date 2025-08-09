@@ -24,6 +24,7 @@ const typeDefs = `#graphql
   type FeedbackConnection {
     edges: [FeedbackEdge!]!
     pageInfo: PageInfo!
+    count: Int!
   }
 
   type PageInfo {
@@ -83,15 +84,20 @@ export const resolvers = {
     events: async (_parent: any, _arg: any, context: any) =>
       await context.prisma.event.findMany(),
     feedbacks: async (_parent: any, { first, after }: any, context: any) => {
-      const feedbacks = await context.prisma.feedback.findMany({
-        take: first,
-        skip: after ? 1 : 0,
-        cursor: after ? { id: after } : undefined,
-        orderBy: { createdAt: "desc" },
-        include: { user: true, event: true },
-      });
+      const [data, count] = await Promise.all([
+        context.prisma.feedback.findMany({
+          take: first,
+          skip: after ? 1 : 0,
+          cursor: after ? { id: after } : undefined,
+          orderBy: { createdAt: "desc" },
+          include: { user: true, event: true },
+        }),
+        context.prisma.feedback.count(),
+      ]);
 
-      const edges = feedbacks.map((feedback: Feedback) => ({
+      context.prisma.feedback.count();
+
+      const edges = data?.map((feedback: Feedback) => ({
         node: feedback,
         cursor: feedback.id,
       }));
@@ -99,11 +105,10 @@ export const resolvers = {
       return {
         edges,
         pageInfo: {
-          hasNextPage: feedbacks.length === first,
-          endCursor: feedbacks.length
-            ? feedbacks[feedbacks.length - 1].id
-            : null,
+          hasNextPage: data.length === first,
+          endCursor: data.length ? data[data.length - 1].id : null,
         },
+        count,
       };
     },
   },
