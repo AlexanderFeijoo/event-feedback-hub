@@ -23,7 +23,7 @@ const STOP_STREAM = gql`
   }
 `;
 // TODO: Improvement: make the stream create one feedback right away, then use the interval
-export default function ControlPanel() {
+export default function SimulatedFeedbackControlPanel() {
   const [streaming, setStreaming] = useState(false);
   const [start, startState] = useMutation(START_STREAM);
   const [stop, stopState] = useMutation(STOP_STREAM);

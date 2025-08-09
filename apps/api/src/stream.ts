@@ -29,7 +29,10 @@ export async function createOrReuseUsersAndEvents(
       data: { email: faker.internet.email(), name: faker.person.fullName() },
     });
     const event = await prisma.event.create({
-      data: { name: faker.company.catchPhrase() },
+      data: {
+        name: faker.company.catchPhrase(),
+        description: faker.company.catchPhraseDescriptor(),
+      },
     });
     return { user, event };
   }

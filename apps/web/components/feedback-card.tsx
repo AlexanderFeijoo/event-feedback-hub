@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Feedback } from "@/lib/__generated__/graphql";
+import { Feedback } from "@/app/lib/__generated__/graphql";
 import { Badge } from "./ui/badge";
 
 interface feedbackCardProps {
@@ -28,7 +28,7 @@ export function FeedbackCard({ feedback }: feedbackCardProps) {
             5
           </Badge>
         </CardTitle>
-        <CardDescription>{feedback?.event.name}</CardDescription>
+        <CardDescription>{feedback?.event.description}</CardDescription>
         <CardAction>
           <Button variant="link">Sign Up</Button>
         </CardAction>

@@ -9,7 +9,7 @@
     "start": "node --env-file=.env dist/index.js",
     "build": "tsc",
     "generate": "prisma generate",
-    "migrate": "prisma migrate dev --name init",
+    "migrate": "prisma migrate dev",
     "prisma": "prisma",
     "seed": "ts-node --esm prisma/seed.ts"
   },

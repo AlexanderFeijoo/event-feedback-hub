@@ -21,9 +21,10 @@ model User {
 }
 
 model Event {
-  id        String    @id @default(cuid())
-  name      String
-  feedbacks Feedback[]
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String    @default("Event Description")
+  feedbacks   Feedback[]
 }
 
 model Feedback {

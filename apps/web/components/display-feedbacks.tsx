@@ -1,8 +1,8 @@
 "use client";
 import { useSubscription, gql, useQuery } from "@apollo/client";
 import { useEffect, useState } from "react";
-import { Feedback } from "../lib/__generated__/graphql";
-import { FeedbackEdge } from "../lib/__generated__/graphql";
+import { Feedback } from "../app/lib/__generated__/graphql";
+import { FeedbackEdge } from "../app/lib/__generated__/graphql";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FeedbackCard } from "./feedback-card";
@@ -36,6 +36,7 @@ const FEEDBACKS = gql`
           id
           event {
             name
+            description
           }
           user {
             email

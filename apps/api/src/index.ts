@@ -41,6 +41,7 @@ const typeDefs = `#graphql
   type Event {
     id: ID!
     name: String!
+    description: String!
     feedbacks: [Feedback!]!
   }
 
@@ -61,10 +62,10 @@ const typeDefs = `#graphql
 
   type Mutation {
     updateUser(id: ID!, email: String!, name: String!): User,
-    updateEvent(id: ID!, name: String!): Event,
+    updateEvent(id: ID!, name: String!, description: String!): Event,
     updateFeedback(id: ID!, eventId: String!, userId: String!, text: String!, rating: Int!): Feedback,
     createUser(email: String!, name: String!): User
-    createEvent(name: String!): Event
+    createEvent(name: String!, description: String!): Event
     createFeedback( eventId: ID!, userID: ID!, text: String!, rating: Int!): Feedback,
     startFeedbackStream(interval: Int!): Boolean!,
     stopFeedbackStream: Boolean!
@@ -135,10 +136,10 @@ export const resolvers = {
       }
     },
     createEvent: async (_parent: any, args: any, context: any) => {
-      const { name } = args;
+      const { name, description } = args;
       try {
         const createdEvent = context.prisma.event.create({
-          data: { name },
+          data: { name, description },
         });
         return createdEvent;
       } catch (error) {
@@ -148,7 +149,7 @@ export const resolvers = {
     createFeedback: async (_parent: any, args: any, context: any) => {
       const { eventId, userId, text, rating } = args;
       try {
-        const createdFeedback = context.prisma.user.create({
+        const createdFeedback = context.prisma.feedback.create({
           data: {
             eventId,
             userId,
@@ -178,11 +179,11 @@ export const resolvers = {
       }
     },
     updateEvent: async (_parent: any, args: any, context: any) => {
-      const { id, name } = args;
+      const { id, name, description } = args;
       try {
         const updatedEvent = context.prisma.event.update({
           where: { id: id },
-          data: { name },
+          data: { name, description },
         });
         return updatedEvent;
       } catch (error) {

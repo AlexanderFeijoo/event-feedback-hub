@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "../style/globals.css";
-import { ApolloWrapper } from "../lib/ApolloWrapper";
+import { ApolloWrapper } from "./lib/ApolloWrapper";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 // import AppSidebar from "@/components/app-sidebar";
