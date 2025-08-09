@@ -1,6 +1,6 @@
 "use client";
 import DisplayFeedback from "@/components/display-feedbacks";
-import ControlPanel from "@/components/control-panel";
+import ControlPanel from "@/components/stream-control-panel";
 
 export default function MainLayout() {
   return (

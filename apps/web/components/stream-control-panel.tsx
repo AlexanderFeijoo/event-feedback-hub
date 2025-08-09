@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { gql, useMutation } from "@apollo/client";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 const START_STREAM = gql`
   mutation StartFeedbackStream($interval: Int!) {
@@ -22,7 +22,7 @@ const STOP_STREAM = gql`
     stopFeedbackStream
   }
 `;
-
+// TODO: Improvement: make the stream create one feedback right away, then use the interval
 export default function ControlPanel() {
   const [streaming, setStreaming] = useState(false);
   const [start, startState] = useMutation(START_STREAM);
@@ -30,24 +30,26 @@ export default function ControlPanel() {
 
   const loading = startState.loading || stopState.loading;
   const error = startState.error ?? stopState.error;
-  const toggleStream = async () => {
-    if (streaming) {
-      try {
-        await stop();
-        console.log("starting feedback stream");
-      } catch (error) {
-        console.error("Error starting feedback stream.", error);
-      }
-    }
+  const toggleStream = useCallback(async () => {
     try {
-      await start({
-        variables: { interval: 2000 },
-      });
-      console.log("starting feedback stream");
+      if (streaming) {
+        const { data } = await stop();
+        if (data?.stopFeedbackStream) {
+          setStreaming(false);
+          console.log("stopping feedback stream.");
+        }
+      } else {
+        // TODO: Make it possible to set interval in the control Panel.
+        const { data } = await start({ variables: { interval: 5000 } });
+        if (data?.startFeedbackStream) {
+          setStreaming(true);
+          console.log("Starting the feedback stream");
+        }
+      }
     } catch (error) {
       console.error("Error starting feedback stream.", error);
     }
-  };
+  }, [streaming, start, stop]);
   return (
     <Card className="w-full">
       <CardHeader>
@@ -63,7 +65,13 @@ export default function ControlPanel() {
       </CardContent>
       <CardFooter className="flex-col gap-2">
         <Button onClick={toggleStream} disabled={loading} className="w-full">
-          {loading ? "Starting..." : "Start Stream"}
+          {loading
+            ? streaming
+              ? "Stopping..."
+              : "Starting..."
+            : streaming
+              ? "Stop Stream"
+              : "Start Stream"}
         </Button>
       </CardFooter>
     </Card>
