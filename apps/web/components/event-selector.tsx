@@ -60,12 +60,10 @@ export default function EventSelector({
             {events?.map((event: Event) => (
               <CommandItem
                 key={event.id}
-                value={event.id}
-                onSelect={(currentValue) => {
-                  if (currentValue) {
-                    onChange(currentValue);
-                    setOpen(false);
-                  }
+                value={`${event.name} ${event.description ?? ""}`}
+                onSelect={() => {
+                  onChange(event.id);
+                  setOpen(false);
                 }}
               >
                 {event.name}

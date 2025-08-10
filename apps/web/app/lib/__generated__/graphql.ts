@@ -80,7 +80,9 @@ export type MutationCreateUserArgs = {
 
 
 export type MutationStartFeedbackStreamArgs = {
+  eventId?: InputMaybe<Scalars['ID']['input']>;
   interval: Scalars['Int']['input'];
+  minRating?: InputMaybe<Scalars['Int']['input']>;
 };
 
 

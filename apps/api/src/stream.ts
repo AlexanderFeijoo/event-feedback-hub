@@ -4,25 +4,24 @@ import { pubsub, FEEDBACK_ADDED } from "./pubsub.ts";
 
 let timer: NodeJS.Timeout | null = null;
 
+type StreamOpts = { eventId?: string | null; minRating?: number | null };
+
 export async function createOrReuseUsersAndEvents(
   prisma: PrismaClient
 ): Promise<{ user: User; event: Event }> {
-  const reuse = Math.random() < 0.7; // TODO - make configurable
-
+  const reuse = Math.random() < 0.7;
   const countUsers = await prisma.user.count();
   const countEvents = await prisma.event.count();
 
   if (reuse && countUsers > 0 && countEvents > 0) {
-    const userStep = Math.floor(Math.random() * countUsers);
-    const eventStep = Math.floor(Math.random() * countEvents);
-
-    const user = await prisma.user.findFirst({ skip: userStep });
-    const event = await prisma.event.findFirst({ skip: eventStep });
-
-    if (!user || !event) {
+    const user = await prisma.user.findFirst({
+      skip: Math.floor(Math.random() * countUsers),
+    });
+    const event = await prisma.event.findFirst({
+      skip: Math.floor(Math.random() * countEvents),
+    });
+    if (!user || !event)
       throw new Error("Expected existing user/event but found null");
-    }
-
     return { user, event };
   } else {
     const user = await prisma.user.create({
@@ -38,36 +37,75 @@ export async function createOrReuseUsersAndEvents(
   }
 }
 
-// TODO - more strongly type
-async function streamFeedback(prisma: PrismaClient) {
-  const { user, event } = await createOrReuseUsersAndEvents(prisma);
+async function pickUser(prisma: PrismaClient): Promise<User> {
+  const count = await prisma.user.count();
+  if (count === 0) {
+    return prisma.user.create({
+      data: { email: faker.internet.email(), name: faker.person.fullName() },
+    });
+  }
+  return (
+    (await prisma.user.findFirst({
+      skip: Math.floor(Math.random() * count),
+    })) ??
+    prisma.user.create({
+      data: { email: faker.internet.email(), name: faker.person.fullName() },
+    })
+  );
+}
+
+function nextRating(minRating?: number | null): number {
+  const min = Math.min(5, Math.max(1, minRating ?? 1));
+  if (minRating != null && Math.random() < 0.7) return min;
+  return faker.number.int({ min, max: 5 });
+}
+
+async function streamFeedback(prisma: PrismaClient, opts: StreamOpts) {
+  let event: Event;
+  if (opts.eventId) {
+    event =
+      (await prisma.event.findUnique({ where: { id: opts.eventId } })) ??
+      (await prisma.event.create({
+        data: {
+          id: opts.eventId,
+          name: "Simulated Event",
+          description: "Auto-created",
+        },
+      }));
+  } else {
+    const pair = await createOrReuseUsersAndEvents(prisma);
+    event = pair.event;
+  }
+
+  const user = await pickUser(prisma);
+
   const feedback = await prisma.feedback.create({
     data: {
       eventId: event.id,
       userId: user.id,
       text: faker.lorem.sentence(),
-      rating: faker.number.int({ min: 1, max: 5 }),
+      rating: nextRating(opts.minRating),
       createdAt: new Date().toISOString(),
     },
     include: { user: true, event: true },
   });
 
   await pubsub.publish(FEEDBACK_ADDED, { feedbackAdded: feedback });
-
   console.log(`Simulated feedback from ${user.name} for "${event.name}"`);
 }
 
 export function startFeedbackStream(
   prisma: PrismaClient,
-  interval: number = 3000
+  interval: number = 3000,
+  opts: StreamOpts = {}
 ) {
   if (timer) {
     console.log("stream is already up");
     return;
   }
-  console.log("starting feedback stream");
+  console.log("starting feedback stream", opts);
   timer = setInterval(() => {
-    streamFeedback(prisma).catch((err) =>
+    streamFeedback(prisma, opts).catch((err) =>
       console.error("Error in stream:", err)
     );
   }, interval);
@@ -80,5 +118,5 @@ export function stopFeedbackStream() {
   }
   clearInterval(timer);
   timer = null;
-  console.log("Steam has stopped");
+  console.log("Stream has stopped");
 }

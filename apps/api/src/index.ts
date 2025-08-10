@@ -68,7 +68,7 @@ const typeDefs = `#graphql
     createUser(email: String!, name: String!): User
     createEvent(name: String!, description: String!): Event
     createFeedback( eventId: ID!, userId: ID!, text: String!, rating: Int!): Feedback,
-    startFeedbackStream(interval: Int!): Boolean!,
+    startFeedbackStream(interval: Int!, eventId: ID, minRating: Int): Boolean!,
     stopFeedbackStream: Boolean!
   }
 
@@ -226,8 +226,8 @@ export const resolvers = {
       }
     },
     startFeedbackStream: async (_parent: any, args: any, context: any) => {
-      const { interval } = args;
-      startFeedbackStream(context.prisma, interval);
+      const { interval, eventId = null, minRating = null } = args;
+      startFeedbackStream(context.prisma, interval, { eventId, minRating });
       return true;
     },
     stopFeedbackStream: async (_parent: any, _args: any, _context: any) => {

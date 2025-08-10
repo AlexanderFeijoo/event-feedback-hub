@@ -179,7 +179,7 @@ export default function CreateFeedbackForm() {
             </FormItem>
           )}
         />
-        <Button type="submit">Submit</Button>
+        <Button type="submit">Add Feedback</Button>
       </form>
     </Form>
   );

@@ -39,6 +39,7 @@ import EventSelector from "./event-selector";
 import RatingDisplay from "./feedback-rating-display";
 import FeedbackRating from "./feedback-rating-select";
 import { useEventFilter } from "@/components/event-filter-context";
+import { useRatingFilter } from "./ratings-filter-context";
 
 const FEEDBACKS = gql`
   query Feedbacks($first: Int!, $after: String, $eventId: ID, $ratingGte: Int) {
@@ -191,9 +192,10 @@ export function FeedbackTable() {
   const [rowSelection, setRowSelection] = useState({});
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const { selectedEventId, setSelectedEventId } = useEventFilter();
-  const [rating, setRating] = useState<number | null>(null);
+  const { minRating, setMinRating } = useRatingFilter();
+  // const [rating, setRating] = useState<number | null>(null);
 
-  const ratingGteVar = rating != null && rating > 0 ? rating : null;
+  const ratingGteVar = minRating != null && minRating > 0 ? minRating : null;
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 5,
@@ -445,12 +447,12 @@ export function FeedbackTable() {
         <div className="ml-4 flex">
           <span className="mr-1 align-middle">Mininum Rating:</span>
           <FeedbackRating
-            value={rating ?? 0}
-            onChange={(v) => setRating(v === rating ? null : v)}
+            value={minRating ?? 0}
+            onChange={(v) => setMinRating(v === minRating ? null : v)}
           />
-          {rating != null && (
+          {minRating != null && (
             <Button
-              onClick={() => setRating(null)}
+              onClick={() => setMinRating(null)}
               variant="ghost"
               size="icon"
               className="size-8"

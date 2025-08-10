@@ -53,12 +53,10 @@ export default function UserSelector({ value, onChange }: UserSelectorProps) {
             {users?.map((user: User) => (
               <CommandItem
                 key={user.id}
-                value={user.id}
-                onSelect={(currentValue) => {
-                  if (currentValue) {
-                    onChange(currentValue);
-                    setOpen(false);
-                  }
+                value={`${user.name} ${user.email ?? ""}`}
+                onSelect={() => {
+                  onChange(user.id);
+                  setOpen(false);
                 }}
               >
                 {`${user.name} (${user.email})`}
