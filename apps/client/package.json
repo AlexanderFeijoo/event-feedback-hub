@@ -9,7 +9,7 @@
     "lint": "next lint --max-warnings 0",
     "check-types": "tsc --noEmit",
     "codegen": "graphql-codegen --config codegen.ts",
-    "build": "pnpm codegen && next build",
+    "build": "next build",
     "watch": "graphql-codegen -w",
     "generate:component": "turbo gen react-component"
   },
