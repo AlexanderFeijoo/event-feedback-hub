@@ -165,7 +165,7 @@ export const resolvers = {
     createFeedback: async (_parent: any, args: any, context: any) => {
       const { eventId, userId, text, rating } = args;
       try {
-        const createdFeedback = context.prisma.feedback.create({
+        const createdFeedback = await context.prisma.feedback.create({
           data: {
             text,
             rating,
@@ -175,11 +175,13 @@ export const resolvers = {
           },
           include: { user: true, event: true },
         });
+
         await pubsub.publish(FEEDBACK_ADDED, {
           feedbackAdded: createdFeedback,
         });
+
         return createdFeedback;
-      } catch (error) {
+      } catch (err) {
         throw new Error("Failed to create Feedback.");
       }
     },
