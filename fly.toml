@@ -2,7 +2,7 @@ app = "event-feedback-hub"
 primary_region = "iad"
 
 [build]
-dockerfile = "./Dockerfile"
+dockerfile = "apps/server/Dockerfile"
 
 [env]
 PORT = "8080"
@@ -30,5 +30,5 @@ port = 443
 interval = "10s"
 timeout = "2s"
 method = "GET"
-path = "/healthz"
+path = "/health"
 protocol = "http"
