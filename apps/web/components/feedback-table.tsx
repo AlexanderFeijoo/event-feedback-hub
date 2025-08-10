@@ -37,10 +37,17 @@ import { useState, useEffect } from "react";
 import { ScrollArea } from "./ui/scroll-area";
 import EventSelector from "./event-selector";
 import RatingDisplay from "./feedback-rating-display";
+import FeedbackRating from "./feedback-rating-select";
+import { useEventFilter } from "@/components/event-filter-context";
 
 const FEEDBACKS = gql`
-  query Feedbacks($first: Int!, $after: String, $eventId: ID) {
-    feedbacks(first: $first, after: $after, eventId: $eventId) {
+  query Feedbacks($first: Int!, $after: String, $eventId: ID, $ratingGte: Int) {
+    feedbacks(
+      first: $first
+      after: $after
+      eventId: $eventId
+      ratingGte: $ratingGte
+    ) {
       count
       edges {
         cursor
@@ -69,8 +76,8 @@ const FEEDBACKS = gql`
 `;
 
 const FEEDBACK_ADDED = gql`
-  subscription Subscription($eventId: ID) {
-    feedbackAdded(eventId: $eventId) {
+  subscription FeedbackAdded($eventId: ID, $ratingGte: Int) {
+    feedbackAdded(eventId: $eventId, ratingGte: $ratingGte) {
       id
       createdAt
       rating
@@ -117,7 +124,7 @@ export const columns: ColumnDef<Feedback>[] = [
     accessorFn: (row) => row?.event?.name,
     cell: ({ getValue }) => {
       return (
-        <div className="underline-offset-4 hover:underline">
+        <div className="line-clamp-2 whitespace-normal break-words underline-offset-4 hover:underline">
           {getValue<string>()}
         </div>
       );
@@ -146,7 +153,9 @@ export const columns: ColumnDef<Feedback>[] = [
     accessorKey: "text",
     header: "Feedback",
     cell: ({ row }) => (
-      <div className="lowercase">{row.getValue("feedback")}</div>
+      <div className="line-clamp whitespace-normal break-words lowercase">
+        {row.getValue("feedback")}
+      </div>
     ),
   },
   {
@@ -158,10 +167,10 @@ export const columns: ColumnDef<Feedback>[] = [
           <Button
             className="text-right"
             variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            // onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Rating
-            <ArrowUpDown />
+            {/* <ArrowUpDown /> */}
           </Button>
         </div>
       );
@@ -181,9 +190,10 @@ export function FeedbackTable() {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
-  const [selectedEventId, setSelectedEventId] = useState<Event["id"] | null>(
-    null
-  );
+  const { selectedEventId, setSelectedEventId } = useEventFilter();
+  const [rating, setRating] = useState<number | null>(null);
+
+  const ratingGteVar = rating != null && rating > 0 ? rating : null;
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 5,
@@ -200,6 +210,7 @@ export function FeedbackTable() {
       first: pagination.pageSize,
       after: null,
       eventId: selectedEventId ?? null,
+      ratingGte: ratingGteVar,
     },
     fetchPolicy: "cache-and-network",
     notifyOnNetworkStatusChange: true,
@@ -219,12 +230,13 @@ export function FeedbackTable() {
       first: pagination.pageSize,
       after: null,
       eventId: selectedEventId ?? null,
+      ratingGte: ratingGteVar,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedEventId]);
+  }, [selectedEventId, ratingGteVar]);
 
   useSubscription(FEEDBACK_ADDED, {
-    variables: { eventId: selectedEventId ?? null },
+    variables: { eventId: selectedEventId ?? null, ratingGte: ratingGteVar },
     onData: ({ client, data }) => {
       const node = data?.data?.feedbackAdded;
       if (!node) return;
@@ -236,18 +248,17 @@ export function FeedbackTable() {
             first: pagination.pageSize,
             after: null,
             eventId: selectedEventId ?? null,
+            ratingGte: ratingGteVar,
           },
         },
         (prev) => {
           const prevEdges: FeedbackEdge[] = prev?.feedbacks?.edges ?? [];
           if (prevEdges.some((e) => e?.node?.id === node.id)) return prev;
 
-          const newEdge = {
-            __typename: "FeedbackEdge",
-            cursor: node.id,
-            node,
-          };
+          if (ratingGteVar != null && node.rating < ratingGteVar) return prev;
+          if (selectedEventId && node.event.id !== selectedEventId) return prev;
 
+          const newEdge = { __typename: "FeedbackEdge", cursor: node.id, node };
           return {
             feedbacks: {
               ...(prev?.feedbacks ?? {}),
@@ -319,6 +330,7 @@ export function FeedbackTable() {
           first: nextRows - currentRows,
           after: cursor,
           eventId: selectedEventId ?? null,
+          ratingGte: ratingGteVar,
         },
         updateQuery: (prev, { fetchMoreResult }) => {
           const prevEdges = prev?.feedbacks?.edges ?? [];
@@ -399,6 +411,20 @@ export function FeedbackTable() {
             <X />
           </Button>
         )}
+        <FeedbackRating
+          value={rating ?? 0}
+          onChange={(v) => setRating(v === rating ? null : v)}
+        />
+        {rating != null && (
+          <Button
+            onClick={() => setRating(null)}
+            variant="ghost"
+            size="icon"
+            className="size-8"
+          >
+            <X />
+          </Button>
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
@@ -428,7 +454,14 @@ export function FeedbackTable() {
       </div>
       <div className="overflow-hidden rounded-md border">
         <ScrollArea className="h-[500px] rounded-md border">
-          <Table>
+          <Table className="table-fixed">
+            <colgroup>
+              <col style={{ width: 40 }} />
+              <col style={{ width: 300 }} />
+              <col style={{ width: 200 }} />
+              <col />
+              <col style={{ width: 150 }} />
+            </colgroup>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>

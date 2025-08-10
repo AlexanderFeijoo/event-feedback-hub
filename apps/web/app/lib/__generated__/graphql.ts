@@ -124,6 +124,7 @@ export type QueryFeedbacksArgs = {
   after?: InputMaybe<Scalars['String']['input']>;
   eventId?: InputMaybe<Scalars['ID']['input']>;
   first: Scalars['Int']['input'];
+  ratingGte?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type Subscription = {
@@ -134,6 +135,7 @@ export type Subscription = {
 
 export type SubscriptionFeedbackAddedArgs = {
   eventId?: InputMaybe<Scalars['ID']['input']>;
+  ratingGte?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type User = {

@@ -14,8 +14,9 @@ import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import { gql, useMutation } from "@apollo/client";
-import { useState } from "react";
 import { useModalControls } from "./modal";
+import { useEventFilter } from "@/components/event-filter-context";
+import { Checkbox } from "./ui/checkbox";
 
 const CREATE_EVENT = gql`
   mutation CreateEvent($name: String!, $description: String!) {
@@ -31,28 +32,32 @@ const formSchema = z.object({
   eventName: z.string().nonempty({
     message: "Event Name is required",
   }),
+  autoSelectEvent: z.boolean(),
   description: z.string().nonempty({
     message: "Event Description is required.",
   }),
 });
 
 export default function CreateEventForm() {
+  const { setSelectedEventId } = useEventFilter();
   const [createEvent] = useMutation(CREATE_EVENT, {
     refetchQueries: ["Events"],
     awaitRefetchQueries: true,
   });
-  const [messageColorClass, setMessageColorClass] = useState(
-    "text-muted-foreground"
-  );
   const { close } = useModalControls();
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      const event = await createEvent({
+      const { data } = await createEvent({
         variables: { name: values.eventName, description: values.description },
       });
-      console.log(values);
+
+      const id = data?.createEvent?.id;
+      if (id && values.autoSelectEvent) {
+        setSelectedEventId(id);
+      }
       close();
+      console.log(values);
       console.log(event);
     } catch (error) {
       console.error("error creating event", error);
@@ -64,6 +69,7 @@ export default function CreateEventForm() {
     defaultValues: {
       eventName: "",
       description: "",
+      autoSelectEvent: true,
     },
   });
   return (
@@ -78,11 +84,11 @@ export default function CreateEventForm() {
               <FormControl>
                 <Input placeholder="Event Name..." {...field} />
               </FormControl>
-              <FormDescription>The display name for the Event.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name="description"
@@ -96,7 +102,25 @@ export default function CreateEventForm() {
                   {...field}
                 />
               </FormControl>
-              <FormDescription>The display name for the Event.</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="autoSelectEvent"
+          render={({ field }) => (
+            <FormItem className="flex">
+              <FormControl>
+                <Checkbox
+                  checked={!!field.value}
+                  onCheckedChange={(checked) => field.onChange(!!checked)}
+                  ref={field.ref}
+                />
+              </FormControl>
+              <FormDescription>
+                Filter Feedback Stream with new Event?
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
