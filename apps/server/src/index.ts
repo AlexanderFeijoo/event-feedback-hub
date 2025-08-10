@@ -143,7 +143,7 @@ export const resolvers = {
     createUser: async (_parent: any, args: any, context: any) => {
       const { email, name } = args;
       try {
-        const createdUser = context.prisma.user.create({
+        const createdUser = await context.prisma.user.create({
           data: { email, name },
         });
         return createdUser;
@@ -154,7 +154,7 @@ export const resolvers = {
     createEvent: async (_parent: any, args: any, context: any) => {
       const { name, description } = args;
       try {
-        const createdEvent = context.prisma.event.create({
+        const createdEvent = await context.prisma.event.create({
           data: { name, description },
         });
         return createdEvent;
