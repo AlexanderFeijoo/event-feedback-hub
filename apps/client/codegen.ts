@@ -6,12 +6,12 @@ const API_URL =
 
 const config: CodegenConfig = {
   schema: API_URL,
-  documents: ["app/**/*.{ts,tsx}"],
+  documents: ["**/*.{ts,tsx}", "!app/lib/__generated__/**", "!node_modules/**"],
   generates: {
     "./app/lib/__generated__/": {
       preset: "client",
-      plugins: [],
       presetConfig: { gqlTagName: "gql" },
+      plugins: [],
     },
   },
   ignoreNoDocuments: true,

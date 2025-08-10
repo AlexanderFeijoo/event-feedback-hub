@@ -21,7 +21,6 @@ export default function MainLayout() {
               </div>
             </div>
             <div className="bg-muted/50 rounded-xl flex-1 flex min-h-0 overflow-hidden">
-              {/* <DisplayFeedback /> */}
               <FeedbackTable />
             </div>
           </div>
