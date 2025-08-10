@@ -84,7 +84,7 @@ export default function CreateOrSwitchUserForm() {
           name="userName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Event Name</FormLabel>
+              <FormLabel>User's Name</FormLabel>
               <FormControl>
                 <Input placeholder="User's Name..." {...field} />
               </FormControl>
@@ -99,7 +99,7 @@ export default function CreateOrSwitchUserForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description</FormLabel>
+              <FormLabel>Email</FormLabel>
               <FormControl>
                 <Input type="email" placeholder="Email" {...field} />
               </FormControl>
