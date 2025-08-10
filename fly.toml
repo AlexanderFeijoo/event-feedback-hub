@@ -32,3 +32,6 @@ timeout = "2s"
 method = "GET"
 path = "/health"
 protocol = "http"
+
+[deploy]
+release_command = "sh -lc 'cd apps/server && pnpm prisma migrate deploy'"
