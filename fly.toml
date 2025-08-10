@@ -34,4 +34,4 @@ path = "/health"
 protocol = "http"
 
 [deploy]
-release_command = "sh -lc 'cd /app/apps/server && pnpm prisma migrate deploy'"
+release_command = "sh -lc 'set -x; cd /app/apps/server && echo DATABASE_URL=$DATABASE_URL && echo DIRECT_URL=$DIRECT_URL && DEBUG=prisma:* pnpm prisma migrate deploy'"
