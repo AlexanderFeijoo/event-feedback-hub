@@ -251,6 +251,7 @@ export const resolvers = {
 
 const schema = makeExecutableSchema({ typeDefs, resolvers });
 const app = express();
+app.get("/health", (_req, res) => res.status(200).send("ok"));
 const httpServer = http.createServer(app);
 const ws = new WebSocketServer({ server: httpServer, path: "/graphql" });
 const serverCleaner = useServer(
@@ -278,14 +279,23 @@ const server = new ApolloServer({
 });
 
 await server.start();
+const ALLOWED = (process.env.ALLOWED_ORIGIN ?? "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
 app.use(
   "/graphql",
-  cors(),
+  cors({
+    origin: ALLOWED.length ? ALLOWED : true,
+    credentials: true,
+  }),
   bodyParser.json(),
   expressMiddleware(server, { context: async () => createContext() })
 );
 
-httpServer.listen(4000, () => {
-  console.log(`Server at http://localhost:4000/graphql`);
-  console.log(`Feedback Subscriptions at ws://localhost:4000/graphql`);
+const PORT = Number(process.env.PORT || 8080);
+httpServer.listen(PORT, "0.0.0.0", () => {
+  console.log(`HTTP at /graphql on :${PORT}`);
+  console.log(`WS   at /graphql on :${PORT}`);
 });

@@ -11,13 +11,16 @@ import { GraphQLWsLink } from "@apollo/client/link/subscriptions";
 import { getMainDefinition } from "@apollo/client/utilities";
 import { createClient } from "graphql-ws";
 
+const httpUri = process.env.NEXT_PUBLIC_API_URL!;
+const wsUri = process.env.NEXT_PUBLIC_WS_URL!;
+
 const http = new HttpLink({
-  uri: "http://localhost:4000/graphql",
+  uri: httpUri,
 });
 
 const ws = new GraphQLWsLink(
   createClient({
-    url: "ws://localhost:4000/graphql",
+    url: wsUri,
   })
 );
 

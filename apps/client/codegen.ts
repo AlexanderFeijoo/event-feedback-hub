@@ -1,16 +1,17 @@
-import { CodegenConfig } from "@graphql-codegen/cli";
+import "dotenv/config";
+import type { CodegenConfig } from "@graphql-codegen/cli";
 
-// TODO - pull schema URL from env files for dev and prod
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/graphql";
+
 const config: CodegenConfig = {
-  schema: "http://localhost:4000/graphql",
+  schema: API_URL,
   documents: ["app/**/*.{ts,tsx}"],
   generates: {
     "./app/lib/__generated__/": {
       preset: "client",
       plugins: [],
-      presetConfig: {
-        gqlTagName: "gql",
-      },
+      presetConfig: { gqlTagName: "gql" },
     },
   },
   ignoreNoDocuments: true,
