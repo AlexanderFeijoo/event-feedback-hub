@@ -1,4 +1,4 @@
-import { Event } from "@/app/lib/__generated__/graphql";
+import { Event, User } from "@/app/lib/__generated__/graphql";
 import { cn } from "@/app/lib/utils";
 
 import { Check, ChevronDown } from "lucide-react";
@@ -14,45 +14,46 @@ import { gql, useQuery } from "@apollo/client";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 
-const EVENTS = gql`
-  query Events {
-    events {
+const USERS = gql`
+  query Users {
+    users {
       id
+      email
       name
-      description
     }
   }
 `;
-type EventSelectorProps = {
+type UserSelectorProps = {
   value: Event["id"] | null;
   onChange: (id: Event["id"] | null) => void;
 };
 
-export default function EventSelector({ value, onChange }: EventSelectorProps) {
+export default function UserSelector({ value, onChange }: UserSelectorProps) {
   const [open, setOpen] = useState(false);
-  const [events, setEvents] = useState<Event[] | null>(null);
-  const { data: eventData } = useQuery(EVENTS);
+  const [users, setUsers] = useState<User[] | null>(null);
+  const { data: userData } = useQuery(USERS);
 
   useEffect(() => {
-    if (eventData?.events) setEvents(eventData.events);
-  }, [eventData]);
+    if (userData?.users) setUsers(userData.users);
+  }, [userData]);
 
-  const selected = value && events ? events.find((e) => e.id === value) : null;
+  const selected = value && users ? users.find((e) => e.id === value) : null;
 
   return (
     <div>
       <Button variant="outline" onClick={() => setOpen(true)}>
-        {selected?.name ?? "Select an Event to Filter..."} <ChevronDown />
+        {selected?.name ?? "Select a User for leaving feedback."}{" "}
+        <ChevronDown />
       </Button>
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput placeholder="Type a command or search..." />
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
           <CommandGroup heading="Suggestions">
-            {events?.map((event: Event) => (
+            {users?.map((user: User) => (
               <CommandItem
-                key={event.id}
-                value={event.id}
+                key={user.id}
+                value={user.id}
                 onSelect={(currentValue) => {
                   if (currentValue) {
                     onChange(currentValue);
@@ -60,11 +61,11 @@ export default function EventSelector({ value, onChange }: EventSelectorProps) {
                   }
                 }}
               >
-                {event.name}
+                {`${user.name} (${user.email})`}
                 <Check
                   className={cn(
                     "ml-auto",
-                    value === event.id ? "opacity-100" : "opacity-0"
+                    value === user.id ? "opacity-100" : "opacity-0"
                   )}
                 />
               </CommandItem>

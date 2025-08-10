@@ -55,10 +55,10 @@ export default function SimulatedFeedbackControlPanel() {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Feedback Stream Control</CardTitle>
+        <CardTitle>Add Feedback or Simulate Stream</CardTitle>
         <CardDescription>
-          Controls for the feedback stream to test the real-time graphql
-          subscription.
+          Start the stream to simulate adding random Feedback, Users, and
+          Events, or manually add Feedback.
         </CardDescription>
         <CardAction></CardAction>
       </CardHeader>
@@ -66,7 +66,12 @@ export default function SimulatedFeedbackControlPanel() {
         {error && <p className="text-red-500">{error.message}</p>}
       </CardContent>
       <CardFooter className="flex-col gap-2">
-        <Button onClick={toggleStream} disabled={loading} className="w-full">
+        <Button
+          onClick={toggleStream}
+          disabled={loading}
+          className="streaming:opacity-50 w-full"
+          variant={streaming ? "destructive" : "default"}
+        >
           {loading
             ? streaming
               ? "Stopping..."

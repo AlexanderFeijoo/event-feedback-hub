@@ -16,6 +16,7 @@ import { gql, useMutation } from "@apollo/client";
 import { useModalControls } from "./modal";
 import FeedbackRating from "./feedback-rating-select";
 import EventSelector from "./event-selector";
+import UserSelector from "./user-selector";
 
 const CREATE_FEEDBACK = gql`
   mutation CreateFeedback(
@@ -49,6 +50,7 @@ const formSchema = z.object({
   event: z.string({
     message: "You must select an event",
   }),
+  user: z.string({ message: "You must select a user to leave feedback." }),
 });
 
 export default function CreateFeedbackForm() {
@@ -63,7 +65,7 @@ export default function CreateFeedbackForm() {
           text: values.text,
           rating: values.rating,
           eventId: values.event,
-          userId: "abc123",
+          userId: values.user,
         },
       });
 
@@ -85,21 +87,39 @@ export default function CreateFeedbackForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <FormField
+          key="feedback-form-user"
+          control={form.control}
+          name="user"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>User</FormLabel>
+              <FormControl>
+                <UserSelector
+                  value={field.value ?? null}
+                  onChange={field.onChange}
+                />
+              </FormControl>
+              {/* <FormDescription>
+                Select a User to attach feedback.
+              </FormDescription> */}
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
           key="feedback-form-event"
           control={form.control}
           name="event"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Your Feedback</FormLabel>
+              <FormLabel>Event</FormLabel>
               <FormControl>
                 <EventSelector
                   value={field.value ?? null}
                   onChange={field.onChange}
                 />
               </FormControl>
-              <FormDescription>
-                Describe your thoughts and feelings about this event.
-              </FormDescription>
+              <FormDescription>Select an event to add feedback</FormDescription>
               <FormMessage />
             </FormItem>
           )}

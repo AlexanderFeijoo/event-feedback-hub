@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardAction,
+  CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
@@ -10,9 +11,9 @@ import {
 
 import CreateModal from "@/components/modal";
 import CreateEventForm from "./create-event-form";
+import CreateOrSwitchUserForm from "./create-user-form";
 
 export default function EventHubControlPanel() {
-  const toggleModal = () => {};
   return (
     <Card className="w-full">
       <CardHeader>
@@ -20,7 +21,9 @@ export default function EventHubControlPanel() {
         <CardDescription>
           Create an event, or simulate switching and creating users.
         </CardDescription>
-        <CardAction></CardAction>
+        <CardContent className="flex justify-center">
+          <p></p>
+        </CardContent>
       </CardHeader>
       <CardFooter className="flex-col gap-2">
         <CreateModal
@@ -30,9 +33,13 @@ export default function EventHubControlPanel() {
         >
           <CreateEventForm />
         </CreateModal>
-        <Button onClick={toggleModal} className="w-full">
-          Create User
-        </Button>
+        <CreateModal
+          title="Create a new User."
+          description="Your new User will be selectable for adding feedback."
+          triggerText="Create New User"
+        >
+          <CreateOrSwitchUserForm />
+        </CreateModal>
       </CardFooter>
     </Card>
   );
