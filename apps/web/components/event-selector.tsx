@@ -26,9 +26,14 @@ const EVENTS = gql`
 type EventSelectorProps = {
   value: Event["id"] | null;
   onChange: (id: Event["id"] | null) => void;
+  placeholder?: string;
 };
 
-export default function EventSelector({ value, onChange }: EventSelectorProps) {
+export default function EventSelector({
+  value,
+  onChange,
+  placeholder,
+}: EventSelectorProps) {
   const [open, setOpen] = useState(false);
   const [events, setEvents] = useState<Event[] | null>(null);
   const { data: eventData } = useQuery(EVENTS);
@@ -42,7 +47,10 @@ export default function EventSelector({ value, onChange }: EventSelectorProps) {
   return (
     <div>
       <Button variant="outline" onClick={() => setOpen(true)}>
-        {selected?.name ?? "Select an Event to Filter..."} <ChevronDown />
+        {selected?.name ??
+          placeholder ??
+          "Select an Event to filter Feedback Stream"}{" "}
+        <ChevronDown />
       </Button>
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput placeholder="Type a command or search..." />

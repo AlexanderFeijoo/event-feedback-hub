@@ -95,20 +95,24 @@ export const resolvers = {
           : {}),
       };
 
+      const orderBy =
+        typeof ratingGte === "number"
+          ? [{ rating: "asc" }, { createdAt: "desc" }, { id: "desc" }]
+          : [{ createdAt: "desc" }, { id: "desc" }];
+
       const [data, count] = await Promise.all([
         context.prisma.feedback.findMany({
           where,
           take: first,
           skip: after ? 1 : 0,
           cursor: after ? { id: after } : undefined,
-          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+          orderBy,
           include: { user: true, event: true },
         }),
         context.prisma.feedback.count({ where }),
       ]);
 
       const edges = data.map((f: Feedback) => ({ node: f, cursor: f.id }));
-
       return {
         edges,
         pageInfo: {

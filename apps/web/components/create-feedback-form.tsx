@@ -12,11 +12,13 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
-import { gql, useMutation } from "@apollo/client";
+import { gql, useApolloClient, useMutation } from "@apollo/client";
 import { useModalControls } from "./modal";
 import FeedbackRating from "./feedback-rating-select";
 import EventSelector from "./event-selector";
 import UserSelector from "./user-selector";
+import { useUserFilter } from "@/components/user-filter-context";
+import { useEventFilter } from "@/components/event-filter-context";
 
 const CREATE_FEEDBACK = gql`
   mutation CreateFeedback(
@@ -43,10 +45,10 @@ const formSchema = z.object({
     message: "Feedback is a required field.",
   }),
   rating: z
-    .number({
-      message: "Feedback rating is required",
-    })
-    .nullable(),
+    .number({ message: "Please select a rating." })
+    .int()
+    .min(1, "Please select a rating.")
+    .max(5, "Max rating is 5."),
   event: z.string({
     message: "You must select an event",
   }),
@@ -54,7 +56,13 @@ const formSchema = z.object({
 });
 
 export default function CreateFeedbackForm() {
-  const [createFeedback, createFeedbackState] = useMutation(CREATE_FEEDBACK);
+  const { selectedUserId, setSelectedUserId } = useUserFilter();
+  const { selectedEventId, setSelectedEventId } = useEventFilter();
+  const client = useApolloClient();
+  const [createFeedback] = useMutation(CREATE_FEEDBACK, {
+    refetchQueries: ["Feedbacks"],
+    awaitRefetchQueries: true,
+  });
   const { close } = useModalControls();
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -68,7 +76,9 @@ export default function CreateFeedbackForm() {
           userId: values.user,
         },
       });
-
+      if (selectedEventId != values.event) setSelectedEventId(values.event);
+      if (selectedUserId != values.user) setSelectedUserId(values.user);
+      await client.refetchQueries({ include: ["FEEDBACKS"] });
       close();
       console.log(feedback);
     } catch (error) {
@@ -76,36 +86,19 @@ export default function CreateFeedbackForm() {
     }
   }
 
+  console.log("selectedUserId", selectedUserId);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       text: "",
-      rating: 5,
+      event: selectedEventId ?? "",
+      user: selectedUserId ?? "",
     },
   });
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <FormField
-          key="feedback-form-user"
-          control={form.control}
-          name="user"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>User</FormLabel>
-              <FormControl>
-                <UserSelector
-                  value={field.value ?? null}
-                  onChange={field.onChange}
-                />
-              </FormControl>
-              {/* <FormDescription>
-                Select a User to attach feedback.
-              </FormDescription> */}
-              <FormMessage />
-            </FormItem>
-          )}
-        />
         <FormField
           key="feedback-form-event"
           control={form.control}
@@ -115,11 +108,32 @@ export default function CreateFeedbackForm() {
               <FormLabel>Event</FormLabel>
               <FormControl>
                 <EventSelector
+                  placeholder="Select Event to Add Feedback."
                   value={field.value ?? null}
                   onChange={field.onChange}
                 />
               </FormControl>
-              <FormDescription>Select an event to add feedback</FormDescription>
+              {/* <FormDescription>Select an event to add feedback</FormDescription> */}
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          key="feedback-form-user"
+          control={form.control}
+          name="user"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>User</FormLabel>
+              <FormControl>
+                <UserSelector
+                  value={field.value || null}
+                  onChange={(value) => field.onChange(value ?? "")}
+                />
+              </FormControl>
+              {/* <FormDescription>
+                Select a User to attach feedback.
+              </FormDescription> */}
               <FormMessage />
             </FormItem>
           )}
@@ -134,13 +148,13 @@ export default function CreateFeedbackForm() {
               <FormControl>
                 <Textarea
                   className="resize-none"
-                  placeholder="Type your message here."
+                  placeholder="Describe your thoughts and feelings about this event."
                   {...field}
                 />
               </FormControl>
-              <FormDescription>
-                Describe your thoughts and feelings about this event.
-              </FormDescription>
+              {/* <FormDescription>
+                
+              </FormDescription> */}
               <FormMessage />
             </FormItem>
           )}
@@ -151,7 +165,7 @@ export default function CreateFeedbackForm() {
           name="rating"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Your Feedback</FormLabel>
+              {/* <FormLabel>Your Feedback</FormLabel> */}
               <FormControl>
                 <FeedbackRating
                   value={field.value ?? 0}
@@ -159,7 +173,7 @@ export default function CreateFeedbackForm() {
                 />
               </FormControl>
               <FormDescription>
-                Describe your thoughts and feelings about this event.
+                How would you rate this event on a scale of 1-5 stars?
               </FormDescription>
               <FormMessage />
             </FormItem>

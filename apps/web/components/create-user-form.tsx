@@ -41,7 +41,16 @@ const formSchema = z.object({
 
 export default function CreateOrSwitchUserForm() {
   const { setSelectedUserId } = useUserFilter();
-  const [createUser] = useMutation(CREATE_USER);
+  const [createUser] = useMutation(CREATE_USER, {
+    refetchQueries: ["Users"],
+    awaitRefetchQueries: true,
+    onCompleted: ({ createUser }) => {
+      if (createUser?.id && form.getValues("autoSelectUser")) {
+        setSelectedUserId(createUser.id);
+      }
+      close();
+    },
+  });
   const { close } = useModalControls();
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -54,7 +63,6 @@ export default function CreateOrSwitchUserForm() {
       if (id && values.autoSelectUser) {
         setSelectedUserId(id);
       }
-      close();
     } catch (error) {
       console.error("error creating event", error);
     }

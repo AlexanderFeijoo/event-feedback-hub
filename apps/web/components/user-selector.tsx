@@ -42,7 +42,7 @@ export default function UserSelector({ value, onChange }: UserSelectorProps) {
   return (
     <div>
       <Button variant="outline" onClick={() => setOpen(true)}>
-        {selected?.name ?? "Select a User for leaving feedback."}{" "}
+        {selected?.name ?? "Select which User is adding Feedback"}{" "}
         <ChevronDown />
       </Button>
       <CommandDialog open={open} onOpenChange={setOpen}>

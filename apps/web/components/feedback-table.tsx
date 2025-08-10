@@ -258,12 +258,43 @@ export function FeedbackTable() {
           if (ratingGteVar != null && node.rating < ratingGteVar) return prev;
           if (selectedEventId && node.event.id !== selectedEventId) return prev;
 
-          const newEdge = { __typename: "FeedbackEdge", cursor: node.id, node };
+          const newEdge: FeedbackEdge = {
+            __typename: "FeedbackEdge",
+            cursor: node.id,
+            node,
+          };
+
+          if (ratingGteVar == null) {
+            return {
+              feedbacks: {
+                ...(prev?.feedbacks ?? {}),
+                count: (prev?.feedbacks?.count ?? 0) + 1,
+                edges: [newEdge, ...prevEdges],
+                pageInfo: prev?.feedbacks?.pageInfo ?? {
+                  __typename: "PageInfo",
+                  hasNextPage: true,
+                  endCursor: prev?.feedbacks?.pageInfo?.endCursor ?? null,
+                },
+              },
+            };
+          }
+
+          const sortEdges = (a: FeedbackEdge, b: FeedbackEdge) => {
+            if (a.node.rating !== b.node.rating)
+              return a.node.rating - b.node.rating;
+            const ta = Date.parse(a.node.createdAt);
+            const tb = Date.parse(b.node.createdAt);
+            if (ta !== tb) return tb - ta;
+            return b.node.id.localeCompare(a.node.id);
+          };
+
+          const nextEdges = [...prevEdges, newEdge].sort(sortEdges);
+
           return {
             feedbacks: {
               ...(prev?.feedbacks ?? {}),
               count: (prev?.feedbacks?.count ?? 0) + 1,
-              edges: [newEdge, ...prevEdges],
+              edges: nextEdges,
               pageInfo: prev?.feedbacks?.pageInfo ?? {
                 __typename: "PageInfo",
                 hasNextPage: true,
@@ -411,20 +442,23 @@ export function FeedbackTable() {
             <X />
           </Button>
         )}
-        <FeedbackRating
-          value={rating ?? 0}
-          onChange={(v) => setRating(v === rating ? null : v)}
-        />
-        {rating != null && (
-          <Button
-            onClick={() => setRating(null)}
-            variant="ghost"
-            size="icon"
-            className="size-8"
-          >
-            <X />
-          </Button>
-        )}
+        <div className="ml-4 flex">
+          <span className="mr-1 align-middle">Mininum Rating:</span>
+          <FeedbackRating
+            value={rating ?? 0}
+            onChange={(v) => setRating(v === rating ? null : v)}
+          />
+          {rating != null && (
+            <Button
+              onClick={() => setRating(null)}
+              variant="ghost"
+              size="icon"
+              className="size-8"
+            >
+              <X />
+            </Button>
+          )}
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
