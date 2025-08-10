@@ -6,13 +6,13 @@ import { ApolloServer } from "@apollo/server";
 import { makeExecutableSchema } from "@graphql-tools/schema";
 import { expressMiddleware } from "@as-integrations/express5";
 import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
-import { createContext } from "./context.ts";
+import { createContext } from "./context.js";
 import { withFilter } from "graphql-subscriptions";
-import { pubsub, FEEDBACK_ADDED } from "./pubsub.ts";
+import { pubsub, FEEDBACK_ADDED } from "./pubsub.js";
 
 import { useServer } from "graphql-ws/use/ws";
 import { WebSocketServer } from "ws";
-import { startFeedbackStream, stopFeedbackStream } from "./stream.ts";
+import { startFeedbackStream, stopFeedbackStream } from "./stream.js";
 import type { Feedback } from "@prisma/client";
 
 const typeDefs = `#graphql

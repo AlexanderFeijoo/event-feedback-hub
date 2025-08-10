@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import type { Event, PrismaClient, User } from "@prisma/client";
-import { pubsub, FEEDBACK_ADDED } from "./pubsub.ts";
+import { pubsub, FEEDBACK_ADDED } from "./pubsub.js";
 
 let timer: NodeJS.Timeout | null = null;
 
