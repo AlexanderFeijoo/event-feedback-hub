@@ -15,7 +15,7 @@ import CreateOrSwitchUserForm from "./create-user-form";
 
 export default function EventHubControlPanel() {
   return (
-    <Card className="w-full">
+    <Card className="w-full h-full">
       <CardHeader>
         <CardTitle>Create User or Event</CardTitle>
         <CardDescription>
@@ -25,7 +25,7 @@ export default function EventHubControlPanel() {
           <p></p>
         </CardContent>
       </CardHeader>
-      <CardFooter className="flex-col gap-2">
+      <CardFooter className="flex-col gap-2 mt-auto">
         <CreateModal
           title="Create New Event"
           description="Your new Event will be selectable for filtering and adding feedback."
