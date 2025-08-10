@@ -18,7 +18,7 @@ interface feedbackCardProps {
   feedback: Feedback;
 }
 
-export function FeedbackCard({ feedback }: feedbackCardProps) {
+export default function FeedbackCard({ feedback }: feedbackCardProps) {
   return (
     <Card className="w-full object-center justify-self-center max-w-6xl gap-4">
       <CardHeader>

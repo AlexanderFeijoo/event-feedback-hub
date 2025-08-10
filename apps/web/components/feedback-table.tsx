@@ -13,7 +13,7 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
+import { ArrowUpDown, ChevronDown, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,12 +21,8 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -39,16 +35,8 @@ import { gql, useQuery, useSubscription } from "@apollo/client";
 import { Event, Feedback, FeedbackEdge } from "@/app/lib/__generated__/graphql";
 import { useState, useEffect } from "react";
 import { ScrollArea } from "./ui/scroll-area";
-
-const EVENTS = gql`
-  query Events {
-    events {
-      id
-      name
-      description
-    }
-  }
-`;
+import EventSelector from "./event-selector";
+import RatingDisplay from "./feedback-rating-display";
 
 const FEEDBACKS = gql`
   query Feedbacks($first: Int!, $after: String, $eventId: ID) {
@@ -127,8 +115,7 @@ export const columns: ColumnDef<Feedback>[] = [
     id: "event",
     header: "Event",
     accessorFn: (row) => row?.event?.name,
-    cell: ({ getValue, row }) => {
-      // const event = row.original.user;
+    cell: ({ getValue }) => {
       return (
         <div className="underline-offset-4 hover:underline">
           {getValue<string>()}
@@ -143,8 +130,7 @@ export const columns: ColumnDef<Feedback>[] = [
     id: "user",
     header: "User",
     accessorFn: (row) => row?.user?.name,
-    cell: ({ getValue, row }) => {
-      // const user = row.original.user;
+    cell: ({ getValue }) => {
       return (
         <div className="underline-offset-4 hover:underline">
           {getValue<string>()}
@@ -182,7 +168,8 @@ export const columns: ColumnDef<Feedback>[] = [
     },
     cell: ({ row }) => {
       return (
-        <div className="text-right font-medium">{row.getValue("rating")}</div>
+        <RatingDisplay rating={row.getValue("rating")} />
+        // <div className="text-right font-medium">{)}</div>
       );
     },
   },
@@ -194,8 +181,9 @@ export function FeedbackTable() {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
-  const [events, setEvents] = useState<Event[]>([]);
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [selectedEventId, setSelectedEventId] = useState<Event["id"] | null>(
+    null
+  );
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 5,
@@ -217,8 +205,6 @@ export function FeedbackTable() {
     notifyOnNetworkStatusChange: true,
   });
 
-  const { data: eventData } = useQuery(EVENTS);
-
   useEffect(() => {
     if (feedbackQueryData?.feedbacks?.edges) {
       setFeedbacks(
@@ -226,10 +212,6 @@ export function FeedbackTable() {
       );
     }
   }, [feedbackQueryData]);
-
-  useEffect(() => {
-    if (eventData?.events) setEvents(eventData.events);
-  }, [eventData]);
 
   useEffect(() => {
     setPagination((p) => ({ pageIndex: 0, pageSize: p.pageSize }));
@@ -257,8 +239,8 @@ export function FeedbackTable() {
           },
         },
         (prev) => {
-          const prevEdges = prev?.feedbacks?.edges ?? [];
-          if (prevEdges.some((e: any) => e?.node?.id === node.id)) return prev;
+          const prevEdges: FeedbackEdge[] = prev?.feedbacks?.edges ?? [];
+          if (prevEdges.some((e) => e?.node?.id === node.id)) return prev;
 
           const newEdge = {
             __typename: "FeedbackEdge",
@@ -384,7 +366,9 @@ export function FeedbackTable() {
     table.setPageIndex(nextIndex);
   };
 
-  const handleChangePageSize = (event) => {
+  const handleChangePageSize = (
+    event: React.ChangeEvent<HTMLSelectElement>
+  ) => {
     const nextPageSize = Number(event.target.value);
 
     const visibleRowIndex = pageIndex * pageSize;
@@ -404,34 +388,17 @@ export function FeedbackTable() {
   return (
     <div className="w-full">
       <div className="flex items-center py-4">
-        <Input
-          placeholder="Filter events..."
-          value={(table.getColumn("event")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("event")?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              Events <ChevronDown />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {events &&
-              events.map((event) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={event.id}
-                    className="capitalize"
-                  >
-                    {event.id}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <EventSelector value={selectedEventId} onChange={setSelectedEventId} />
+        {selectedEventId && (
+          <Button
+            onClick={() => setSelectedEventId(null)}
+            variant="ghost"
+            size="icon"
+            className="size-8"
+          >
+            <X />
+          </Button>
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">

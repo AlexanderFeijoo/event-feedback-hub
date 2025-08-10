@@ -5,7 +5,7 @@ import { Feedback } from "../app/lib/__generated__/graphql";
 import { FeedbackEdge } from "../app/lib/__generated__/graphql";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FeedbackCard } from "./feedback-card";
+import FeedbackCard from "./feedback-card";
 const FEEDBACK_ADDED = gql`
   subscription Subscription($eventId: ID) {
     feedbackAdded(eventId: $eventId) {

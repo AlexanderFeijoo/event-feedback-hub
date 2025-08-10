@@ -10,12 +10,12 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import { gql, useMutation } from "@apollo/client";
-import { useState } from "react";
 import { useModalControls } from "./modal";
+import FeedbackRating from "./feedback-rating-select";
+import EventSelector from "./event-selector";
 
 const CREATE_FEEDBACK = gql`
   mutation CreateFeedback(
@@ -46,6 +46,9 @@ const formSchema = z.object({
       message: "Feedback rating is required",
     })
     .nullable(),
+  event: z.string({
+    message: "You must select an event",
+  }),
 });
 
 export default function CreateFeedbackForm() {
@@ -59,7 +62,7 @@ export default function CreateFeedbackForm() {
         variables: {
           text: values.text,
           rating: values.rating,
-          eventId: "event0",
+          eventId: values.event,
           userId: "abc123",
         },
       });
@@ -82,6 +85,27 @@ export default function CreateFeedbackForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <FormField
+          key="feedback-form-event"
+          control={form.control}
+          name="event"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Your Feedback</FormLabel>
+              <FormControl>
+                <EventSelector
+                  value={field.value ?? null}
+                  onChange={field.onChange}
+                />
+              </FormControl>
+              <FormDescription>
+                Describe your thoughts and feelings about this event.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          key="feedback-form-feedback"
           control={form.control}
           name="text"
           render={({ field }) => (
@@ -92,6 +116,26 @@ export default function CreateFeedbackForm() {
                   className="resize-none"
                   placeholder="Type your message here."
                   {...field}
+                />
+              </FormControl>
+              <FormDescription>
+                Describe your thoughts and feelings about this event.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          key="feedback-form-rating"
+          control={form.control}
+          name="rating"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Your Feedback</FormLabel>
+              <FormControl>
+                <FeedbackRating
+                  value={field.value ?? 0}
+                  onChange={field.onChange}
                 />
               </FormControl>
               <FormDescription>

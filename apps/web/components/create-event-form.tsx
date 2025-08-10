@@ -37,7 +37,10 @@ const formSchema = z.object({
 });
 
 export default function CreateEventForm() {
-  const [createEvent, createEventState] = useMutation(CREATE_EVENT);
+  const [createEvent] = useMutation(CREATE_EVENT, {
+    refetchQueries: ["Events"],
+    awaitRefetchQueries: true,
+  });
   const [messageColorClass, setMessageColorClass] = useState(
     "text-muted-foreground"
   );
@@ -73,7 +76,7 @@ export default function CreateEventForm() {
             <FormItem>
               <FormLabel>Event Name</FormLabel>
               <FormControl>
-                <Input placeholder="shadcn" {...field} />
+                <Input placeholder="Event Name..." {...field} />
               </FormControl>
               <FormDescription>The display name for the Event.</FormDescription>
               <FormMessage />
@@ -89,7 +92,7 @@ export default function CreateEventForm() {
               <FormControl>
                 <Textarea
                   className="resize-none"
-                  placeholder="Type your message here."
+                  placeholder="A description of your event..."
                   {...field}
                 />
               </FormControl>
