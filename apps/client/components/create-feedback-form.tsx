@@ -67,7 +67,7 @@ export default function CreateFeedbackForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      const feedback = await createFeedback({
+      await createFeedback({
         variables: {
           text: values.text,
           rating: values.rating,
