@@ -8,7 +8,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
     "db:up": "pnpm --filter server run db:up",
-    "prisma:setup": "pnpm --filter server run generate && pnpm --filter server run migrate:dev && pnpm --filter server run seed",
+    "prisma:setup": "pnpm --filter server run generate && pnpm --filter server run migrate:dev && pnpm",
     "setup:dev": "pnpm install && pnpm run db:up && pnpm run prisma:setup"
   },
   "devDependencies": {
