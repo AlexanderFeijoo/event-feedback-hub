@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { gql, useMutation } from "@apollo/client";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useEventFilter } from "./event-filter-context";
 import { useStreamStatus } from "./simulated-feedback-filter-context";
 import SimulatedStatusIndicator from "./feedback-simulated-status-indicator";
@@ -31,6 +31,8 @@ const STOP_STREAM = gql`
   }
 `;
 
+const AUTO_STOP_MS = 30_000;
+
 export default function SimulatedFeedbackControlPanel() {
   const { isStreamingFeedback, setIsStreamingFeedback } = useStreamStatus();
   const [start, startState] = useMutation(START_STREAM);
@@ -38,31 +40,62 @@ export default function SimulatedFeedbackControlPanel() {
   const { selectedEventId } = useEventFilter();
   const [interval, setInterval] = useState([3000]);
 
-  const loading = startState.loading || stopState.loading;
-  const toggleStream = useCallback(async () => {
-    try {
-      if (isStreamingFeedback) {
+  const autoStopRef = useRef<number | null>(null);
+
+  const clearAutoStop = () => {
+    if (autoStopRef.current != null) {
+      clearTimeout(autoStopRef.current);
+      autoStopRef.current = null;
+    }
+  };
+
+  const scheduleAutoStop = () => {
+    clearAutoStop();
+    autoStopRef.current = window.setTimeout(async () => {
+      try {
         const { data } = await stop();
         if (data?.stopFeedbackStream) {
           setIsStreamingFeedback(false);
-          console.log("stopping feedback stream.");
+          console.log("Auto-stopped feedback stream after ~30s.");
+        }
+      } catch (err) {
+        console.error("Auto-stop failed:", err);
+      }
+    }, AUTO_STOP_MS);
+  };
+
+  useEffect(() => {
+    return () => clearAutoStop();
+  }, []);
+
+  const loading = startState.loading || stopState.loading;
+
+  const toggleStream = useCallback(async () => {
+    try {
+      if (isStreamingFeedback) {
+        clearAutoStop();
+        const { data } = await stop();
+        if (data?.stopFeedbackStream) {
+          setIsStreamingFeedback(false);
+          console.log("Stopping feedback stream.");
         }
       } else {
         const { data } = await start({
           variables: {
             interval: interval[0],
             eventId: selectedEventId ?? null,
-            // minRating: minRating ?? null,
           },
         });
         if (data?.startFeedbackStream) {
           setIsStreamingFeedback(true);
-          console.log("Starting the feedback stream");
+          console.log("Starting the feedback stream.");
+          scheduleAutoStop();
         }
       }
     } catch (error) {
-      console.error("Error starting feedback stream.", error);
+      console.error("Error starting/stopping feedback stream.", error);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     isStreamingFeedback,
     setIsStreamingFeedback,
@@ -71,22 +104,24 @@ export default function SimulatedFeedbackControlPanel() {
     stop,
     interval,
   ]);
+
   return (
     <Card className="w-full h-full">
       <CardHeader>
         <CardTitle>Add Feedback or Simulate Stream</CardTitle>
         <CardDescription>
           Start the stream to simulate adding random{" "}
-          <strong>Feedback Users, and Events.</strong>
+          <strong>Feedback, Users, and Events.</strong>
           <br />
-          The simulated stream will re-use existing events and users
-          approximately 70% of the time. Change the <strong>interval</strong> to
-          control how fast simulated feedback appears.
+          The stream reuses existing events/users ~70% of the time. Use the{" "}
+          <strong>interval</strong> to control speed.
+          <br />
+          <em>Note: the stream auto-stops after ~30 seconds.</em>
         </CardDescription>
         <CardAction></CardAction>
       </CardHeader>
       <CardContent className="flex flex-col justify-center h-full">
-        <p>Interval: {interval}ms</p>
+        <p>Interval: {interval[0]}ms</p>
         <FeedbackInterval
           disabled={isStreamingFeedback}
           onValueChange={setInterval}
