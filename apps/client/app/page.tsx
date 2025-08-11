@@ -13,7 +13,7 @@ export default function MainLayout() {
       <EventFilterProvider>
         <RatingFilterProvider>
           <StreamStatusProvider>
-            <div className="flex h-[calc(100vh-4rem)] flex-col gap-4 p-4 pt-0 min-h-0">
+            <div className="flex md-h-[calc(100vh-4rem)] flex-col gap-4 p-4 pt-0 min-h-0">
               <div className="grid auto-rows-min gap-4 md:grid-cols-2 mt-5">
                 <div className="bg-muted/50 min-w-50 rounded-xl">
                   <EventHubControlPanel />
