@@ -7,11 +7,9 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "env:ensure": "node -e \"const fs=require('fs');if(!fs.existsSync('server/.env')){if(fs.existsSync('server/.env.example')){fs.copyFileSync('server/.env.example','server/.env');console.log('Created server/.env from .env.example');}else{console.error('Missing server/.env (or .env.example).');process.exit(1);}}\"",
-    "db:up": "docker compose up -d || docker-compose up -d",
-    "prisma:setup": "pnpm -F server prisma generate && pnpm -F server migrate:dev && pnpm -F server seed",
-    "setup:dev": "pnpm run env:ensure && pnpm install && pnpm run db:up && pnpm run prisma:setup",
-    "dev:all": "pnpm run setup:dev && turbo dev"
+    "db:up": "pnpm --filter server run db:up",
+    "prisma:setup": "pnpm --filter server run generate && pnpm --filter server run migrate:dev && pnpm --filter server run seed",
+    "setup:dev": "pnpm install && pnpm run db:up && pnpm run prisma:setup"
   },
   "devDependencies": {
     "prettier": "^3.6.2",

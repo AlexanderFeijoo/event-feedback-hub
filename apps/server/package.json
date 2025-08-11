@@ -8,6 +8,7 @@
     "dev": "node --loader ts-node/esm --watch src/index.ts",
     "start": "node dist/index.js",
     "build": "tsc -p tsconfig.build.json",
+    "db:uo": "docker compose up -d || docker-compose up -d",
     "generate": "prisma generate",
     "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
