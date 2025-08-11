@@ -24,8 +24,8 @@ _From the repo root:_
 ```
 git clone https://github.com/AlexanderFeijoo/event-feedback-hub.git
 cd event-feedback-hub
-cp server/.env.example server/.env
-cp client/.env.example client/.env
+cp apps/server/.env.example apps/server/.env
+cp apps/client/.env.example apps/client/.env
 pnpm run setup:dev
 turbo dev
 ```
