@@ -110,7 +110,7 @@ export default function SimulatedFeedbackControlPanel() {
       <CardHeader>
         <CardTitle>Simulate Feedback Stream</CardTitle>
         <CardDescription>
-          Start the stream to simulate adding random{" "}
+          Start the stream to simulate adding random
           <strong>Feedback, Users, and Events.</strong>
           <br />
           The stream reuses existing events/users ~70% of the time. Use the{" "}
