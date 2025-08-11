@@ -512,7 +512,7 @@ export function FeedbackTable() {
       <div className="flex items-center justify-end space-x-2 py-4">
         <div className="text-muted-foreground flex-1 text-sm">
           {table.getFilteredSelectedRowModel().rows.length} of {totalRows}{" "}
-          row(s) selected.
+          row(s).
         </div>
         <div className="text-sm text-muted-foreground">
           Page <strong>{pageIndex + 1}</strong> of <strong>{totalPages}</strong>

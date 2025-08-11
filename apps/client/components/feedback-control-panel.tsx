@@ -108,7 +108,7 @@ export default function SimulatedFeedbackControlPanel() {
   return (
     <Card className="w-full h-full">
       <CardHeader>
-        <CardTitle>Add Feedback or Simulate Stream</CardTitle>
+        <CardTitle>Simulate Feedback Stream</CardTitle>
         <CardDescription>
           Start the stream to simulate adding random{" "}
           <strong>Feedback, Users, and Events.</strong>
