@@ -451,7 +451,7 @@ export function FeedbackTable() {
         </div>
       </div>
       <div className="overflow-x-auto rounded-md border">
-        <ScrollArea className="h-[500px] rounded-md border">
+        <ScrollArea className="h-[23rem] rounded-md border">
           <Table className="table-auto md:table-fixed ">
             <colgroup>
               {/* <col style={{ width: 40 }} /> */}
