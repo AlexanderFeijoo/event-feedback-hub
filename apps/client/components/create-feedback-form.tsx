@@ -67,7 +67,6 @@ export default function CreateFeedbackForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      console.log(values);
       const feedback = await createFeedback({
         variables: {
           text: values.text,
@@ -80,13 +79,10 @@ export default function CreateFeedbackForm() {
       if (selectedUserId != values.user) setSelectedUserId(values.user);
       await client.refetchQueries({ include: ["FEEDBACKS"] });
       close();
-      console.log(feedback);
     } catch (error) {
       console.error("error creating feedback", error);
     }
   }
-
-  console.log("selectedUserId", selectedUserId);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

@@ -46,11 +46,8 @@ export default function EventSelector({
 
   return (
     <div>
-      <Button variant="outline" onClick={() => setOpen(true)}>
-        {selected?.name ??
-          placeholder ??
-          "Select an Event to filter Feedback Stream"}{" "}
-        <ChevronDown />
+      <Button type="button" variant="outline" onClick={() => setOpen(true)}>
+        {selected?.name ?? placeholder ?? "Filter by Event..."} <ChevronDown />
       </Button>
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput placeholder="Type a command or search..." />

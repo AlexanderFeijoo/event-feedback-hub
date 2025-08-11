@@ -41,7 +41,7 @@ export default function UserSelector({ value, onChange }: UserSelectorProps) {
 
   return (
     <div>
-      <Button variant="outline" onClick={() => setOpen(true)}>
+      <Button type="button" variant="outline" onClick={() => setOpen(true)}>
         {selected?.name ?? "Select which User is adding Feedback"}{" "}
         <ChevronDown />
       </Button>

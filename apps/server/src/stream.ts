@@ -4,7 +4,11 @@ import { pubsub, FEEDBACK_ADDED } from "./pubsub.js";
 
 let timer: NodeJS.Timeout | null = null;
 
-type StreamOpts = { eventId?: string | null; minRating?: number | null };
+type StreamOpts = {
+  interval?: number;
+  eventId?: string | null;
+  minRating?: number | null;
+};
 
 export async function createOrReuseUsersAndEvents(
   prisma: PrismaClient
@@ -94,6 +98,11 @@ async function streamFeedback(prisma: PrismaClient, opts: StreamOpts) {
   console.log(`Simulated feedback from ${user.name} for "${event.name}"`);
 }
 
+function withJitter(ms: number) {
+  const delta = ms * 0.2;
+  return Math.round(ms + (Math.random() * 2 - 1) * delta);
+}
+
 export function startFeedbackStream(
   prisma: PrismaClient,
   interval: number = 3000,
@@ -103,12 +112,24 @@ export function startFeedbackStream(
     console.log("stream is already up");
     return;
   }
-  console.log("starting feedback stream", opts);
-  timer = setInterval(() => {
-    streamFeedback(prisma, opts).catch((err) =>
-      console.error("Error in stream:", err)
-    );
-  }, interval);
+
+  const baseInterval = Math.max(1, opts.interval ?? interval);
+
+  console.log("starting feedback stream", { ...opts, interval: baseInterval });
+
+  streamFeedback(prisma, opts).catch((err) =>
+    console.error("Error in stream (immediate):", err)
+  );
+
+  const tick = () => {
+    streamFeedback(prisma, opts)
+      .catch((err) => console.error("Error in stream:", err))
+      .finally(() => {
+        timer = setTimeout(tick, withJitter(baseInterval));
+      });
+  };
+
+  timer = setTimeout(tick, withJitter(baseInterval));
 }
 
 export function stopFeedbackStream() {
@@ -116,7 +137,7 @@ export function stopFeedbackStream() {
     console.log("no stream is up");
     return;
   }
-  clearInterval(timer);
+  clearTimeout(timer);
   timer = null;
   console.log("Stream has stopped");
 }

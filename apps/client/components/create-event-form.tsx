@@ -57,8 +57,6 @@ export default function CreateEventForm() {
         setSelectedEventId(id);
       }
       close();
-      console.log(values);
-      console.log(event);
     } catch (error) {
       console.error("error creating event", error);
     }

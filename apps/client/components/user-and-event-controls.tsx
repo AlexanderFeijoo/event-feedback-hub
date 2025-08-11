@@ -12,14 +12,16 @@ import {
 import CreateModal from "@/components/modal";
 import CreateEventForm from "./create-event-form";
 import CreateOrSwitchUserForm from "./create-user-form";
+import CreateFeedbackForm from "./create-feedback-form";
 
 export default function EventHubControlPanel() {
   return (
     <Card className="w-full h-full">
       <CardHeader>
-        <CardTitle>Create User or Event</CardTitle>
+        <CardTitle>Create Users, Events, and Add Feedback</CardTitle>
         <CardDescription>
-          Create an event, or simulate switching and creating users.
+          Create an event, or simulate switching and creating users, or add
+          feedback manually.
         </CardDescription>
         <CardContent className="flex justify-center">
           <p></p>
@@ -39,6 +41,13 @@ export default function EventHubControlPanel() {
           triggerText="Create New User"
         >
           <CreateOrSwitchUserForm />
+        </CreateModal>
+        <CreateModal
+          title="Add New Feedback"
+          description="Your feedback will be published to the live feedback stream"
+          triggerText="Add Feedback"
+        >
+          <CreateFeedbackForm />
         </CreateModal>
       </CardFooter>
     </Card>

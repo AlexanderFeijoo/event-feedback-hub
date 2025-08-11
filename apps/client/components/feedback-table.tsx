@@ -13,16 +13,10 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { ArrowUpDown, ChevronDown, X } from "lucide-react";
+import { X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -32,7 +26,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { gql, useQuery, useSubscription } from "@apollo/client";
-import { Event, Feedback, FeedbackEdge } from "@/app/lib/__generated__/graphql";
+import { Feedback, FeedbackEdge } from "@/app/lib/__generated__/graphql";
 import { useState, useEffect } from "react";
 import { ScrollArea } from "./ui/scroll-area";
 import EventSelector from "./event-selector";
@@ -162,7 +156,7 @@ export const columns: ColumnDef<Feedback>[] = [
   {
     id: "rating",
     accessorKey: "rating",
-    header: ({ column }) => {
+    header: () => {
       return (
         <div className="text-right">
           <Button
@@ -177,10 +171,7 @@ export const columns: ColumnDef<Feedback>[] = [
       );
     },
     cell: ({ row }) => {
-      return (
-        <RatingDisplay rating={row.getValue("rating")} />
-        // <div className="text-right font-medium">{)}</div>
-      );
+      return <RatingDisplay rating={row.getValue("rating")} />;
     },
   },
 ];
@@ -193,7 +184,6 @@ export function FeedbackTable() {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const { selectedEventId, setSelectedEventId } = useEventFilter();
   const { minRating, setMinRating } = useRatingFilter();
-  // const [rating, setRating] = useState<number | null>(null);
 
   const ratingGteVar = minRating != null && minRating > 0 ? minRating : null;
   const [pagination, setPagination] = useState<PaginationState>({
@@ -308,8 +298,6 @@ export function FeedbackTable() {
       );
     },
   });
-
-  console.log("feedbacks", feedbacks);
 
   const table = useReactTable({
     data: feedbacks,
@@ -432,7 +420,7 @@ export function FeedbackTable() {
 
   return (
     <div className="w-full">
-      <div className="flex items-center py-4">
+      <div className="flex flex-wrap items-center py-4">
         <EventSelector value={selectedEventId} onChange={setSelectedEventId} />
         {selectedEventId && (
           <Button
@@ -444,7 +432,7 @@ export function FeedbackTable() {
             <X />
           </Button>
         )}
-        <div className="ml-4 flex">
+        <div className="ml-4 flex items-center">
           <span className="mr-1 align-middle">Mininum Rating:</span>
           <FeedbackRating
             value={minRating ?? 0}
@@ -461,36 +449,10 @@ export function FeedbackTable() {
             </Button>
           )}
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              Columns <ChevronDown />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
-      <div className="overflow-hidden rounded-md border">
+      <div className="overflow-x-auto rounded-md border">
         <ScrollArea className="h-[500px] rounded-md border">
-          <Table className="table-fixed">
+          <Table className="table-auto md:table-fixed ">
             <colgroup>
               <col style={{ width: 40 }} />
               <col style={{ width: 300 }} />
