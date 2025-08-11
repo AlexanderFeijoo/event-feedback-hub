@@ -16,7 +16,7 @@ export default function Header() {
         <div className="ml-auto flex items-center gap-2">
           <Button variant="ghost" asChild size="sm" className="hidden sm:flex">
             <a
-              href="https://github.com/alexanderfeijoo"
+              href="https://github.com/AlexanderFeijoo/event-feedback-hub"
               rel="noopener noreferrer"
               target="_blank"
               className="dark:text-foreground"

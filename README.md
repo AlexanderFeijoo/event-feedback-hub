@@ -1,135 +1,70 @@
-# Turborepo starter
+# Event Feedback Hub
 
-This Turborepo starter is maintained by the Turborepo core team.
+### Live: https://event-feedback-hub-client.vercel.app
 
-## Using this example
+### Technologies
 
-Run the following command:
+React + Next.js (client), GraphQL (Apollo) + Prisma (server), Postgres (Docker), Turborepo, shadcn/ui. Realtime via GraphQL subscriptions via websocket.
 
-```sh
-npx create-turbo@latest
-```
+### Features
 
-## What's inside?
+- Create users, events, and feedback
+- Server side Filter by event and minimum rating
+- Live updates (GraphQL subscriptions via webhook)
+- Server side pagination
+- Simulated feedback stream with adjustable interval + jitter
+- Dark Mode!
 
-This Turborepo includes the following packages/apps:
+### Dev setup
 
-### Apps and Packages
+**_Prereqs:_** Node 18+, pnpm, Docker running
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
+_From the repo root:_
 
 ```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
-```
-
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
+git clone https://github.com/AlexanderFeijoo/event-feedback-hub.git
+cd event-feedback-hub
+cp server/.env.example server/.env
+cp client/.env.example client/.env
+pnpm run setup:dev
 turbo dev
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+**_Client_**: http://localhost:3000
+
+**_API_** (HTTP & WS): http://localhost:4000/graphql
+
+##### Dev Notes
+
+If Postgres isn’t up,
 
 ```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+cd apps/server
+docker compose up -d
+pnpm run generate
+pnpm run migrate:dev
 ```
 
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+**_Graphql Code Gen / Types_**:
 
 ```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
+cd apps/client
+pnpm run codegen
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+### Hosting
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+**_Frontend (Vercel):_** auto-deploys from main. Uses `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_WS_URL`.
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
+**_Backend (Fly.io):_** Managed deployments with `flyctl` controlled by `fly.toml`
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
+### Roadmap / Potential Improvements
 
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+- Mobile UI enhancements
+- View for Events and Users management
+- Full CRUD implementation (delete and update for feedbacks, Users, Events)
+- Real user auth. Currently, user selection is simulated, want to tie to real auth
+- Some quality of life re-factoring. The graphql schema files can be seperated out into their own files for clarity. On the client, the feedback-table has become quite large and a good candidate for re-factor.
+- Add codegen and database seeding to deploy build and local dev install steps
+- CI/CD pipelines for linting, smoke tests for both FE and BE
+- Fix the initial DB seed script - since moving to direct connection for migrations on the BE, local seeding doesnt work. For now just turn on the feedback stream to seed events, users, and feedback.
